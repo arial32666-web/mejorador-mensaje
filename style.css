@@ -1,0 +1,135 @@
+#mje-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 96px;
+  z-index: 9990;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c5cff, #4b2fd6);
+  color: #fff;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
+  user-select: none;
+}
+
+#mje-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9995;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+#mje-overlay.mje-hidden { display: none; }
+
+#mje-panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #1a1425;
+  color: #eee;
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.mje-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.mje-title { font-weight: 600; font-size: 16px; }
+#mje-close { cursor: pointer; color: #bbb; font-size: 16px; }
+
+.mje-label {
+  display: block;
+  font-size: 12px;
+  color: #b8a9e0;
+  margin: 10px 0 4px;
+}
+
+#mje-scene, #mje-result, #mje-ooc, #mje-cfg-instruction {
+  width: 100%;
+  box-sizing: border-box;
+  background: #241c33;
+  border: 1px solid #3c2f55;
+  border-radius: 10px;
+  color: #eee;
+  padding: 8px 10px;
+  font-size: 14px;
+  resize: vertical;
+}
+
+#mje-cfg-length {
+  width: 100%;
+  background: #241c33;
+  border: 1px solid #3c2f55;
+  border-radius: 10px;
+  color: #eee;
+  padding: 8px 10px;
+}
+
+.mje-primary {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #7c5cff;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mje-primary:disabled { opacity: .6; }
+
+.mje-error {
+  margin-top: 10px;
+  color: #ff8a8a;
+  font-size: 13px;
+}
+
+.mje-hidden { display: none !important; }
+
+.mje-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.mje-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #3c2f55;
+  background: #241c33;
+  color: #eee;
+  cursor: pointer;
+}
+
+.mje-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  color: #b8a9e0;
+  font-size: 13px;
+}
+.mje-nav button {
+  background: none;
+  border: 1px solid #3c2f55;
+  color: #eee;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.mje-settings-block { margin-top: 8px; }
