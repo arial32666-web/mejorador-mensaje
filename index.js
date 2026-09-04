@@ -1,78 +1,97 @@
 // Mejorador de Mensaje — extensión para SillyTavern / TauriTavern
-//
-// Usa la API pública SillyTavern.getContext() (documentada en
-// docs.sillytavern.app/for-contributors/writing-extensions) en vez de
-// imports internos, para que sea más resistente a cambios de versión.
+// Rediseñado al estilo "Enhancer" (paleta de colores, pestaña User,
+// Scene Description, OOC Prompt - Scene, OOC Prompt - Main).
+// Solo implementa la pestaña "User" — "Char" se deja fuera a propósito.
 
 (function () {
   const MODULE_NAME = 'mejorador_mensaje';
 
+  const ACCENTS = ['#e05d5d', '#e08a3d', '#c9a227', '#4caf6d', '#3bb3a6', '#4d8ce0'];
+
   const DEFAULT_SETTINGS = {
-    instruction:
+    mainInstruction:
       'Reescribe el siguiente mensaje de rol expandiéndolo con más detalle narrativo y sensorial, sin cambiar la intención ni añadir diálogo nuevo, manteniendo las acciones entre asteriscos. Responde solo con el texto reescrito, sin explicaciones ni comillas.',
-    length: 'medium',
+    accent: ACCENTS[0],
     useContext: true,
+    fabPos: null,
   };
 
-  function getCtx() {
-    return SillyTavern.getContext();
-  }
+  function getCtx() { return SillyTavern.getContext(); }
 
   function loadSettings() {
     const ctx = getCtx();
     if (!ctx.extensionSettings[MODULE_NAME]) {
       ctx.extensionSettings[MODULE_NAME] = { ...DEFAULT_SETTINGS };
     }
+    const s = ctx.extensionSettings[MODULE_NAME];
     for (const key in DEFAULT_SETTINGS) {
-      if (ctx.extensionSettings[MODULE_NAME][key] === undefined) {
-        ctx.extensionSettings[MODULE_NAME][key] = DEFAULT_SETTINGS[key];
-      }
+      if (s[key] === undefined) s[key] = DEFAULT_SETTINGS[key];
     }
-    return ctx.extensionSettings[MODULE_NAME];
+    return s;
   }
 
-  function saveSettings() {
-    getCtx().saveSettingsDebounced();
-  }
+  function saveSettings() { getCtx().saveSettingsDebounced(); }
 
-  function buildPrompt(scene, extraOoc, settings) {
-    const lengthMap = { short: 'Corto.', medium: 'Longitud media.', long: 'Largo y detallado.' };
-    const lengthHint = lengthMap[settings.length] || '';
-    const extra = extraOoc && extraOoc.trim() ? ` ${extraOoc.trim()}` : '';
+  function buildPrompt(scene, sceneOoc, mainOoc) {
+    const extra = sceneOoc && sceneOoc.trim() ? ` ${sceneOoc.trim()}` : '';
+    const main = mainOoc && mainOoc.trim() ? mainOoc.trim() : '';
     return (
       `Mensaje a mejorar:\n${scene.trim()}\n\n` +
-      `[OOC: ${settings.instruction} ${lengthHint}${extra} No agregues comentarios fuera de personaje, responde solo con el texto final.]`
+      `[OOC: ${main} ${extra} No agregues comentarios fuera de personaje, responde solo con el texto final.]`
     );
   }
 
-  function injectPanelHtml() {
+  function accentDotsHtml(current) {
+    return ACCENTS.map((c) => `<span class="mje-dot${c === current ? ' is-on' : ''}" data-color="${c}" style="background:${c}"></span>`).join('');
+  }
+
+  function injectHtml() {
+    const settings = loadSettings();
     const html = `
-      <div id="mje-fab" title="Mejorar mensaje">✨</div>
+      <div id="mje-fab" title="Arrastra para mover">✨</div>
+
       <div id="mje-overlay" class="mje-hidden">
         <div id="mje-panel">
           <div class="mje-header">
-            <span class="mje-title">Mejorar mensaje</span>
-            <span id="mje-close">✕</span>
+            <span class="mje-title">Enhancer</span>
+            <div class="mje-dots">${accentDotsHtml(settings.accent)}</div>
+            <span id="mje-moon" title="Solo visual">☾</span>
+            <span id="mje-close" title="Cerrar">✕</span>
           </div>
 
-          <label class="mje-label">Tu mensaje tosco</label>
-          <textarea id="mje-scene" rows="4" placeholder="Ej: hola *sacude la mano con felicidad sonriendo*"></textarea>
+          <div class="mje-tabs">
+            <span class="mje-tab is-on" id="mje-tab-user">👤 User</span>
+            <span class="mje-tab is-off" id="mje-tab-char" title="No implementado en esta versión">🤖 Char</span>
+          </div>
 
-          <label class="mje-label">Instrucción extra (opcional)</label>
-          <input id="mje-ooc" type="text" placeholder="Ej: en primera persona, tono serio..." />
+          <div class="mje-section">
+            <div class="mje-section-label">🎬 SCENE DESCRIPTION</div>
+            <textarea id="mje-scene" rows="4" placeholder="Describe qué pasa, en pocas palabras... ej: 'hola *sacude la mano con felicidad sonriendo*'"></textarea>
+          </div>
 
-          <button id="mje-run" class="mje-primary"><span id="mje-run-label">Mejorar</span></button>
+          <div class="mje-section">
+            <div class="mje-section-label">
+              ⚙ OOC PROMPT - SCENE <span class="mje-badge">optional</span>
+            </div>
+            <div class="mje-hint">Temporal — se borra después de mejorar. Úsalo para instrucciones puntuales de esta escena.</div>
+            <textarea id="mje-ooc-scene" rows="2" placeholder="Ej: 'enfócate en su reacción, mantenlo interno, sin diálogo.'"></textarea>
+          </div>
+
+          <div class="mje-section">
+            <div class="mje-section-label">
+              🔖 OOC PROMPT - MAIN <span class="mje-badge">optional</span>
+            </div>
+            <div class="mje-hint">Se guarda de forma permanente — aplica a cada mejora.</div>
+            <textarea id="mje-ooc-main" rows="3"></textarea>
+          </div>
+
+          <button id="mje-run" class="mje-primary">✨ <span id="mje-run-label">Enhance</span></button>
 
           <div id="mje-error" class="mje-error mje-hidden"></div>
 
           <div id="mje-result-wrap" class="mje-hidden">
-            <label class="mje-label">Resultado (puedes editarlo)</label>
-            <textarea id="mje-result" rows="8"></textarea>
-            <div id="mje-hist-nav" class="mje-nav mje-hidden">
-              <button id="mje-prev">‹</button>
-              <span id="mje-hist-count"></span>
-              <button id="mje-next">›</button>
-            </div>
+            <div class="mje-section-label">RESULTADO (editable)</div>
+            <textarea id="mje-result" rows="7"></textarea>
             <div class="mje-actions">
               <button id="mje-retry">Reintentar</button>
               <button id="mje-use" class="mje-primary">Usar este</button>
@@ -81,146 +100,159 @@
         </div>
       </div>`;
     $('body').append(html);
+    $('#mje-ooc-main').val(settings.mainInstruction);
   }
 
-  function injectSettingsHtml() {
-    const settings = loadSettings();
-    const html = `
-      <div class="mje-settings-block">
-        <div class="inline-drawer">
-          <div class="inline-drawer-toggle inline-drawer-header">
-            <b>Mejorador de Mensaje</b>
-            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
-          </div>
-          <div class="inline-drawer-content">
-            <label class="mje-label">Instrucción de mejora</label>
-            <textarea id="mje-cfg-instruction" rows="3">${settings.instruction}</textarea>
-
-            <label class="mje-label">Longitud del resultado</label>
-            <select id="mje-cfg-length">
-              <option value="short">Corta</option>
-              <option value="medium">Media</option>
-              <option value="long">Larga</option>
-            </select>
-
-            <label class="mje-label" style="display:flex; align-items:center; gap:6px;">
-              <input id="mje-cfg-context" type="checkbox" style="width:auto;" />
-              Usar el contexto del chat (recomendado)
-            </label>
-          </div>
-        </div>
-      </div>`;
-    $('#extensions_settings2').append(html);
-    $('#mje-cfg-instruction').val(settings.instruction);
-    $('#mje-cfg-length').val(settings.length);
-    $('#mje-cfg-context').prop('checked', settings.useContext);
-
-    $('#mje-cfg-instruction').on('input', function () {
-      settings.instruction = $(this).val();
-      saveSettings();
-    });
-    $('#mje-cfg-length').on('change', function () {
-      settings.length = $(this).val();
-      saveSettings();
-    });
-    $('#mje-cfg-context').on('change', function () {
-      settings.useContext = $(this).is(':checked');
-      saveSettings();
-    });
+  function applyAccent(color) {
+    document.documentElement.style.setProperty('--mje-accent', color);
   }
 
   function wireUp() {
-    let history = [];
-    let historyIndex = -1;
     let busy = false;
 
     const $fab = $('#mje-fab');
     const $overlay = $('#mje-overlay');
     const $scene = $('#mje-scene');
-    const $ooc = $('#mje-ooc');
+    const $oocScene = $('#mje-ooc-scene');
+    const $oocMain = $('#mje-ooc-main');
     const $run = $('#mje-run');
     const $runLabel = $('#mje-run-label');
     const $error = $('#mje-error');
     const $resultWrap = $('#mje-result-wrap');
     const $result = $('#mje-result');
-    const $histNav = $('#mje-hist-nav');
-    const $histCount = $('#mje-hist-count');
-    const $prev = $('#mje-prev');
-    const $next = $('#mje-next');
+
+    applyAccent(loadSettings().accent);
 
     function openPanel() { $overlay.removeClass('mje-hidden'); }
     function closePanel() { $overlay.addClass('mje-hidden'); }
-
-    $fab.on('click', openPanel);
     $('#mje-close').on('click', closePanel);
+
+    $('#mje-tab-char').on('click', () => {
+      showError('La pestaña "Char" no está disponible en esta versión.');
+    });
+
+    $('.mje-dots').on('click', '.mje-dot', function () {
+      const color = $(this).data('color');
+      const settings = loadSettings();
+      settings.accent = color;
+      saveSettings();
+      applyAccent(color);
+      $('.mje-dot').removeClass('is-on');
+      $(this).addClass('is-on');
+    });
+
+    $oocMain.on('input', function () {
+      const settings = loadSettings();
+      settings.mainInstruction = $(this).val();
+      saveSettings();
+    });
 
     function showError(msg) { $error.text(msg).removeClass('mje-hidden'); }
     function clearError() { $error.text('').addClass('mje-hidden'); }
     function setBusy(state, label) {
       busy = state;
       $run.prop('disabled', state);
-      $runLabel.text(label || 'Mejorar');
-    }
-
-    function renderResult() {
-      const entry = history[historyIndex];
-      $result.val(entry ? entry.text : '');
-      const total = history.length;
-      $histNav.toggleClass('mje-hidden', total <= 1);
-      $histCount.text(total ? `${historyIndex + 1}/${total}` : '');
-      $prev.prop('disabled', historyIndex <= 0);
-      $next.prop('disabled', historyIndex >= total - 1);
+      $runLabel.text(label || 'Enhance');
     }
 
     async function runGenerate(label) {
       const scene = $scene.val().trim();
-      if (!scene) { showError('Escribe primero tu mensaje.'); return; }
+      if (!scene) { showError('Escribe primero la descripción de la escena.'); return; }
       clearError();
       setBusy(true, label);
       try {
         const settings = loadSettings();
         const ctx = getCtx();
-        const prompt = buildPrompt(scene, $ooc.val(), settings);
+        const prompt = buildPrompt(scene, $oocScene.val(), settings.mainInstruction);
         const text = await ctx.generateQuietPrompt({ quietPrompt: prompt });
-        history = history.slice(0, historyIndex + 1);
-        history.push({ text: (text || '').trim() });
-        historyIndex = history.length - 1;
+        $result.val((text || '').trim());
         $resultWrap.removeClass('mje-hidden');
-        renderResult();
+        $oocScene.val(''); // OOC - Scene es temporal: se borra tras mejorar
         setBusy(false, 'Reintentar mejora');
       } catch (e) {
-        setBusy(false, 'Mejorar');
+        setBusy(false, 'Enhance');
         showError('Falló la generación: ' + (e && e.message ? e.message : String(e)));
       }
     }
 
     $run.on('click', () => runGenerate('Mejorando...'));
     $('#mje-retry').on('click', () => runGenerate('Mejorando...'));
-    $prev.on('click', () => { if (historyIndex > 0) { historyIndex--; renderResult(); } });
-    $next.on('click', () => { if (historyIndex < history.length - 1) { historyIndex++; renderResult(); } });
 
     $('#mje-use').on('click', () => {
       const text = $result.val().trim();
       if (!text) return;
       $('#send_textarea').val(text).trigger('input');
-      history = [];
-      historyIndex = -1;
       $scene.val('');
-      $ooc.val('');
       $resultWrap.addClass('mje-hidden');
-      $runLabel.text('Mejorar');
+      $runLabel.text('Enhance');
       clearError();
       closePanel();
     });
+
+    // ---------- burbuja arrastrable ----------
+    let dragging = false;
+    let moved = false;
+    let startX, startY, startRight, startBottom;
+
+    function applyFabPos(settings) {
+      if (settings.fabPos) {
+        $fab.css({ right: settings.fabPos.right + 'px', bottom: settings.fabPos.bottom + 'px' });
+      } else {
+        $fab.css({ right: '', bottom: '' });
+      }
+    }
+    applyFabPos(loadSettings());
+
+    function onPointerDown(e) {
+      dragging = true;
+      moved = false;
+      const p = e.touches ? e.touches[0] : e;
+      startX = p.clientX;
+      startY = p.clientY;
+      const rect = $fab[0].getBoundingClientRect();
+      startRight = window.innerWidth - rect.right;
+      startBottom = window.innerHeight - rect.bottom;
+      e.preventDefault();
+    }
+    function onPointerMove(e) {
+      if (!dragging) return;
+      const p = e.touches ? e.touches[0] : e;
+      const dx = p.clientX - startX;
+      const dy = p.clientY - startY;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+      let right = startRight - dx;
+      let bottom = startBottom - dy;
+      right = Math.max(4, Math.min(window.innerWidth - 52, right));
+      bottom = Math.max(4, Math.min(window.innerHeight - 52, bottom));
+      $fab.css({ right: right + 'px', bottom: bottom + 'px' });
+    }
+    function onPointerUp() {
+      if (!dragging) return;
+      dragging = false;
+      if (moved) {
+        const settings = loadSettings();
+        const rect = $fab[0].getBoundingClientRect();
+        settings.fabPos = {
+          right: Math.round(window.innerWidth - rect.right),
+          bottom: Math.round(window.innerHeight - rect.bottom),
+        };
+        saveSettings();
+      } else {
+        openPanel();
+      }
+    }
+
+    $fab.on('mousedown touchstart', onPointerDown);
+    $(document).on('mousemove touchmove', onPointerMove);
+    $(document).on('mouseup touchend', onPointerUp);
   }
 
   $(document).ready(function () {
     const check = setInterval(() => {
-      if ($('#send_textarea').length && $('#extensions_settings2').length) {
+      if ($('#send_textarea').length) {
         clearInterval(check);
         loadSettings();
-        injectPanelHtml();
-        injectSettingsHtml();
+        injectHtml();
         wireUp();
       }
     }, 500);
