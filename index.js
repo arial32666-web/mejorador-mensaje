@@ -8,9 +8,16 @@
 
   const ACCENTS = ['#e05d5d', '#e08a3d', '#c9a227', '#4caf6d', '#3bb3a6', '#4d8ce0'];
 
+  const INTENSITY_TEXT = {
+    light: 'Aplica solo un pulido ligero: corrige fluidez, ortografía y ritmo. Cambia lo mínimo posible la redacción original.',
+    moderate: 'Expande con más detalle narrativo y sensorial, sin cambiar la intención ni añadir diálogo nuevo.',
+    strong: 'Reescribe la prosa de forma notoria: varía la estructura de las oraciones, separa diálogo y narración con más claridad, y añade matices sensoriales y emocionales — incluso si el texto original ya está bien elaborado, transforma el estilo de forma clara mientras mantienes los mismos eventos, diálogos e intención.',
+  };
+
   const DEFAULT_SETTINGS = {
     mainInstruction:
-      'Reescribe el siguiente mensaje de rol expandiéndolo con más detalle narrativo y sensorial, sin cambiar la intención ni añadir diálogo nuevo, manteniendo las acciones entre asteriscos. Responde solo con el texto reescrito, sin explicaciones ni comillas.',
+      'Mantén las acciones entre asteriscos. Responde solo con el texto reescrito, sin explicaciones ni comillas.',
+    intensity: 'moderate',
     accent: ACCENTS[0],
     useContext: true,
     fabPos: null,
@@ -32,12 +39,13 @@
 
   function saveSettings() { getCtx().saveSettingsDebounced(); }
 
-  function buildPrompt(scene, sceneOoc, mainOoc) {
+  function buildPrompt(scene, sceneOoc, mainOoc, intensity) {
     const extra = sceneOoc && sceneOoc.trim() ? ` ${sceneOoc.trim()}` : '';
     const main = mainOoc && mainOoc.trim() ? mainOoc.trim() : '';
+    const intensityLine = INTENSITY_TEXT[intensity] || INTENSITY_TEXT.moderate;
     return (
       `Mensaje a mejorar:\n${scene.trim()}\n\n` +
-      `[OOC: ${main} ${extra} No agregues comentarios fuera de personaje, responde solo con el texto final.]`
+      `[OOC: ${intensityLine} ${main} ${extra} No agregues comentarios fuera de personaje, responde solo con el texto final.]`
     );
   }
 
@@ -55,18 +63,21 @@
           <div class="mje-header">
             <span class="mje-title">Enhancer</span>
             <div class="mje-dots">${accentDotsHtml(settings.accent)}</div>
-            <span id="mje-moon" title="Solo visual">☾</span>
             <span id="mje-close" title="Cerrar">✕</span>
-          </div>
-
-          <div class="mje-tabs">
-            <span class="mje-tab is-on" id="mje-tab-user">👤 User</span>
-            <span class="mje-tab is-off" id="mje-tab-char" title="No implementado en esta versión">🤖 Char</span>
           </div>
 
           <div class="mje-section">
             <div class="mje-section-label">🎬 SCENE DESCRIPTION</div>
             <textarea id="mje-scene" rows="4" placeholder="Describe qué pasa, en pocas palabras... ej: 'hola *sacude la mano con felicidad sonriendo*'"></textarea>
+          </div>
+
+          <div class="mje-section">
+            <div class="mje-section-label">🎚 INTENSIDAD</div>
+            <div class="mje-intensity">
+              <span class="mje-int-btn" data-val="light">Ligero</span>
+              <span class="mje-int-btn" data-val="moderate">Moderado</span>
+              <span class="mje-int-btn" data-val="strong">Fuerte</span>
+            </div>
           </div>
 
           <div class="mje-section">
@@ -127,10 +138,6 @@
     function closePanel() { $overlay.addClass('mje-hidden'); }
     $('#mje-close').on('click', closePanel);
 
-    $('#mje-tab-char').on('click', () => {
-      showError('La pestaña "Char" no está disponible en esta versión.');
-    });
-
     $('.mje-dots').on('click', '.mje-dot', function () {
       const color = $(this).data('color');
       const settings = loadSettings();
@@ -145,6 +152,20 @@
       const settings = loadSettings();
       settings.mainInstruction = $(this).val();
       saveSettings();
+    });
+
+    function markIntensityBtn(val) {
+      $('.mje-int-btn').removeClass('is-on');
+      $(`.mje-int-btn[data-val="${val}"]`).addClass('is-on');
+    }
+    markIntensityBtn(loadSettings().intensity);
+
+    $('.mje-intensity').on('click', '.mje-int-btn', function () {
+      const val = $(this).data('val');
+      const settings = loadSettings();
+      settings.intensity = val;
+      saveSettings();
+      markIntensityBtn(val);
     });
 
     function showError(msg) { $error.text(msg).removeClass('mje-hidden'); }
@@ -163,7 +184,7 @@
       try {
         const settings = loadSettings();
         const ctx = getCtx();
-        const prompt = buildPrompt(scene, $oocScene.val(), settings.mainInstruction);
+        const prompt = buildPrompt(scene, $oocScene.val(), settings.mainInstruction, settings.intensity);
         const text = await ctx.generateQuietPrompt({ quietPrompt: prompt });
         $result.val((text || '').trim());
         $resultWrap.removeClass('mje-hidden');
