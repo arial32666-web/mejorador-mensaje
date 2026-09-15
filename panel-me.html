@@ -1,0 +1,1662 @@
+<style>
+  :where(#__imeOverlay, #__imeFab) *,
+  :where(#__imeOverlay, #__imeFab) *::before,
+  :where(#__imeOverlay, #__imeFab) *::after {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #__imeInner ::selection {
+    background-color: var(--ac-half);
+    color: var(--text0);
+  }
+  #__imeOverlay .material-symbols-outlined,
+  #__imeFab .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-transform: none !important;
+    letter-spacing: normal;
+    word-wrap: normal;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    vertical-align: middle;
+  }
+
+  #__imeOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(10, 10, 10, .5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 6px;
+    animation: .18s imeFadeIn;
+  }
+  #__imeOverlay.visible {
+    display: flex;
+  }
+  @keyframes imeFadeIn {
+    from { opacity: 0 }
+    to { opacity: 1 }
+  }
+  #__imeInner {
+    --ac: rgba(88,165,255,1);
+    --ac-half: rgba(88,165,255,.502);
+    --ac-dim: rgba(88,165,255,.133);
+    --ac-grad-top: rgba(50,130,250,1);
+    --ac-grad-bot: rgba(30,110,235,1);
+    --ac-border: rgba(26,101,224,1);
+    --ac-hover-top: rgba(56,139,255,1);
+    --ac-shadow: rgba(50,130,250,.251);
+    --bg0: rgba(20, 20, 20, 1);
+    --bg1: rgba(35, 35, 35, 1);
+    --bg2: rgba(45, 45, 45, 1);
+    --bg3: rgba(55, 55, 55, 1);
+    --border: rgba(55, 55, 55, 1);
+    --border2: rgba(45, 45, 45, 1);
+    --text0: rgba(250, 250, 250, 1);
+    --text1: rgba(240, 240, 240, 1);
+    --text2: rgba(210, 210, 210, 1);
+    --text3: rgba(145, 145, 145, 1);
+    --text4: rgba(80, 80, 80, 1);
+    --sheet-bg: linear-gradient(145deg, rgba(25, 25, 25, 1), rgba(15, 15, 15, 1));
+    --err-bg: rgba(250, 80, 75, .15);
+    --err-text: rgba(255, 125, 115, 1);
+    --err-border: rgba(250, 80, 70, .5);
+    --red-bg: rgba(248, 81, 73, .15);
+    --red-text: rgba(255, 123, 114, 1);
+    --red-border: rgba(248, 81, 73, .4);
+
+    width: 100%;
+    max-width: 650px;
+    max-height: calc(95vh - 80px);
+    background: var(--sheet-bg);
+    border-radius: 16px;
+    box-shadow: 0 0 6px rgba(0,0,0,.7), 0 0 0 1px var(--border);
+    color: var(--text1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: .2s cubic-bezier(.22,.7,.36,1) imeSlideUp;
+    container-type: inline-size;
+    container-name: ime-inner;
+  }
+  @keyframes imeSlideUp {
+    from { transform: translateY(24px); opacity: 0 }
+    to { transform: translateY(0); opacity: 1 }
+  }
+  #__imeInner.ime-light {
+    --bg0: rgba(255, 245, 235, 1);
+    --bg1: rgba(245, 235, 225, 1);
+    --bg2: rgba(235, 225, 215, 1);
+    --bg3: rgba(225, 215, 205, 1);
+    --border: rgba(220, 210, 190, 1);
+    --border2: rgba(240, 230, 220, 1);
+    --text0: rgba(30, 25, 20, 1);
+    --text1: rgba(50, 45, 40, 1);
+    --text2: rgba(85, 80, 70, 1);
+    --text3: rgba(125, 115, 105, 1);
+    --text4: rgba(165, 155, 140, 1);
+    --sheet-bg: linear-gradient(145deg, rgba(255, 245, 235, 1), rgba(245, 235, 225, 1));
+    --red-bg: rgba(210,35,50,.1);
+    --red-text: rgba(165,30,30,1);
+    --red-border: rgba(210,35,45,.5);
+  }
+
+  .ime-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border2);
+    background: var(--bg1);
+    flex-shrink: 0;
+    gap: 10px;
+  }
+  .ime-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text0);
+    letter-spacing: -.2px;
+  }
+  .ime-title-short {
+    display: none;
+  }
+  @container ime-inner (max-width: 499px) {
+    .ime-title-full {
+      display: none;
+    }
+    .ime-title-short {
+      display: inline;
+    }
+  }
+  .ime-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ime-swatch-row {
+    display: flex;
+    padding: 0 2px;
+    gap: 4px;
+    height: 20px;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 110px;
+    scrollbar-width: none;
+  }
+  .ime-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform .15s, border-color .15s;
+  }
+  .ime-swatch:hover { transform: scale(1.2); }
+  .ime-swatch.active { border-color: var(--text1); transform: scale(1.15); }
+
+  .ime-icon-toggle, .ime-close-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: 0 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--text3);
+    font-size: 24px;
+    cursor: pointer;
+    transition: .15s;
+    flex-shrink: 0
+  }
+  .ime-close-btn:hover {
+    background: var(--red-bg);
+    border-color: var(--red-border);
+    color: var(--red-text);
+  }
+  .ime-icon-toggle:hover {
+    background: var(--bg2);
+    border-color: var(--text3);
+    color: var(--text1);
+  }
+  .ime-icon-toggle.active {
+    background: var(--ac-dim);
+    border-color: var(--ac-half);
+    color: var(--ac);
+  }
+
+  /* ── tabs (matches LM panel style) ── */
+  .ime-tabs {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border2);
+  }
+  .ime-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text3);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 6px;
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .ime-tab-btn .material-symbols-outlined {
+    font-size: 16px;
+  }
+  .ime-tab-btn:hover {
+    color: var(--text1);
+  }
+  .ime-tab-btn.active {
+    color: var(--ac);
+    border-bottom-color: var(--ac);
+  }
+  .ime-tab-panel {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .ime-tab-panel.active {
+    display: flex;
+  }
+
+  .ime-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex: 1;
+    gap: 10px;
+  }
+
+  .ime-sticky-footer {
+    position: sticky;
+    bottom: -14px;
+    margin: 4px -16px -14px;
+    padding: 8px 16px 14px;
+    background: var(--bg1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 2;
+  }
+
+  .ime-char-context {
+    background: rgba(0, 0, 0, .12);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 1.4;
+    max-height: 5lh;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .ime-light .ime-char-context {
+    background: var(--bg2);
+  }
+  .ime-char-context::-webkit-scrollbar {
+    width: 4px;
+  }
+  .ime-char-context::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+  .ime-field-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .ime-field-label .material-symbols-outlined {
+    font-size: 15px;
+  }
+  .ime-optional-tag {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text4);
+    text-transform: none;
+    letter-spacing: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .ime-field-hint {
+    font-size: 11px;
+    color: var(--text4);
+    line-height: 1.45;
+    margin: 0 0 2px;
+  }
+
+  .ime-ta-wrap {
+    position: relative;
+    display: flex;
+  }
+  .ime-textarea {
+    flex: 1;
+    width: 100%;
+    background: var(--bg1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text1);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 9px 10px;
+    padding-bottom: 16px;
+    resize: none;
+    min-height: 4lh;
+    max-height: 20lh;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .ime-textarea.ime-small {
+    min-height: 3lh;
+  }
+  .ime-textarea:focus {
+    border-color: var(--ac);
+    box-shadow: 0 0 0 3px var(--ac-dim);
+  }
+  .ime-textarea::placeholder {
+    color: var(--text4);
+  }
+  .ime-resize-handle {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 22px;
+    height: 16px;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    z-index: 2;
+    border-radius: 0 0 6px 0;
+    transition: background .12s;
+  }
+  .ime-resize-handle::before {
+    content: "";
+    width: 16px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--text3);
+    opacity: .55;
+    transition: background .12s, opacity .12s, width .12s;
+  }
+  .ime-resize-handle:hover, .ime-resize-handle.dragging {
+    background: var(--ac-dim);
+  }
+  .ime-resize-handle:hover::before, .ime-resize-handle.dragging::before {
+    background: var(--ac);
+    opacity: 1;
+    width: 20px;
+  }
+
+  .ime-divider {
+    height: 1px;
+    background: var(--border2);
+    margin: 2px 0;
+    flex-shrink: 0;
+  }
+
+  .ime-section-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 0;
+  }
+  .ime-section-toggle .material-symbols-outlined {
+    color: var(--text3);
+    font-size: 18px;
+    transition: transform .18s;
+  }
+  .ime-section-toggle.open > .material-symbols-outlined {
+    transform: rotate(180deg);
+  }
+  .ime-collapse {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .ime-collapse.open { display: flex; }
+
+  .ime-actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .ime-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(180deg, var(--ac-hover-top), var(--ac-grad-top));
+    border: 1px solid var(--ac-border);
+    color: #fff;
+    border-radius: 7px;
+    padding: 9px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: .15s;
+    flex: 1;
+  }
+  .ime-btn .material-symbols-outlined { font-size: 18px; }
+  .ime-btn:hover {
+    box-shadow: 0 2px 10px var(--ac-shadow);
+  }
+  .ime-btn:active { transform: translateY(1px); }
+  .ime-btn:disabled {
+    opacity: .4;
+    pointer-events: none;
+  }
+  .ime-btn-secondary {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    flex: 0 0 auto;
+  }
+  .ime-btn-secondary:hover {
+    background: var(--bg3);
+    border-color: var(--text3);
+    box-shadow: none;
+  }
+  .ime-btn-icon {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin-left: auto;
+    gap: 0;
+  }
+  .ime-btn-icon .material-symbols-outlined { font-size: 19px; }
+
+  .ime-history-nav {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .ime-history-nav.visible { display: inline-flex; }
+  .ime-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .ime-nav-btn .material-symbols-outlined { font-size: 18px; }
+  .ime-nav-btn:hover {
+    background: var(--bg3);
+    border-color: var(--text3);
+  }
+  .ime-nav-btn:disabled {
+    opacity: .35;
+    pointer-events: none;
+  }
+  .ime-nav-input {
+    width: 34px;
+    text-align: center;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text1);
+    border-radius: 6px;
+    font-size: 12px;
+    padding: 4px 2px;
+    -moz-appearance: textfield;
+  }
+  .ime-nav-input::-webkit-outer-spin-button,
+  .ime-nav-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .ime-nav-sep {
+    color: var(--text3);
+    font-size: 12px;
+  }
+  .ime-nav-total {
+    color: var(--text3);
+    font-size: 12px;
+    min-width: 12px;
+    text-align: left;
+  }
+
+  .ime-result-wrap {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .ime-result-wrap.visible { display: flex; }
+  .ime-result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ime-result-ta {
+    background: var(--ac-dim);
+    border: 1px solid var(--ac-half);
+    min-height: 5lh;
+  }
+  .ime-result-ta:focus {
+    border-color: var(--ac);
+  }
+
+  .ime-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text3);
+    min-height: 16px;
+  }
+  .ime-spinner {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid var(--ac-dim);
+    border-top-color: var(--ac);
+    animation: imeSpin .7s linear infinite;
+    display: none;
+    flex-shrink: 0;
+  }
+  .ime-spinner.spinning { display: inline-block; }
+  @keyframes imeSpin { to { transform: rotate(360deg); } }
+
+  .ime-error-box {
+    display: none;
+    background: var(--err-bg);
+    border: 1px solid var(--err-border);
+    color: var(--err-text);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .ime-error-box.visible { display: block; }
+
+  .ime-btn-danger {
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+    color: var(--red-text);
+  }
+  .ime-btn-danger:hover {
+    background: rgba(248,81,73,.28);
+  }
+
+  .ime-confirm-row {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-top: 4px;
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+    border-radius: 7px;
+    flex-wrap: wrap;
+  }
+  .ime-confirm-row.visible { display: flex; }
+  .ime-confirm-row span {
+    font-size: 12px;
+    color: var(--red-text);
+    flex: 1;
+    min-width: 0;
+  }
+  .ime-confirm-yes {
+    padding: 4px 10px;
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+    border-radius: 5px;
+    color: var(--red-text);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .ime-confirm-yes:hover { background: rgba(248,81,73,.3); }
+  .ime-confirm-no {
+    padding: 4px 10px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text3);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .ime-confirm-no:hover {
+    background: var(--bg3);
+    border-color: var(--text3);
+    color: var(--text2);
+  }
+
+  #__imeFab {
+    position: fixed;
+    right: 20px;
+    bottom: 210px;
+    width: 36;
+    height: 36px;
+    border-radius: 50%;
+    background: transparent !important;
+    border: none !important;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 9998;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #__imeFab:hover { transform: scale(1.07); }
+  #__imeFab:active { transform: scale(0.95); }
+  #__imeFab .material-symbols-outlined {
+    font-size: 26px;
+    pointer-events: none;
+    text-shadow:
+      0 0 1px rgba(0,0,0,1),
+      0 0 1px rgba(0,0,0,1),
+      0 0 1px rgba(0,0,0,1),
+      0 0 2px rgba(0,0,0,.5);
+  }
+
+  /* ── iPhone mode: overrides the fixed 95vh/80px sizing ── */
+  #__imeInner.cm-iphone-mode {
+    max-height: calc(100vh - 180px) !important;
+    margin-top: 100px !important;
+  }
+</style>
+
+<div id="__imeFab" title="Message Enhancer">
+  <span class="material-symbols-outlined">auto_awesome</span>
+</div>
+
+<div id="__imeOverlay">
+  <div id="__imeInner">
+    <div class="ime-header">
+      <span class="ime-title"><span class="ime-title-full">Message Enhancer</span><span class="ime-title-short">Enhancer</span></span>
+      <div class="ime-header-controls">
+        <div class="ime-swatch-row" id="imeSwatchRow"></div>
+        <button id="__imeThemeToggle" class="ime-icon-toggle" title="Toggle dark/light">
+          <span class="material-symbols-outlined">dark_mode</span>
+        </button>
+        <button id="__imeCloseBtn" class="ime-close-btn" title="Close">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="ime-body">
+      <div class="ime-tabs">
+        <button class="ime-tab-btn active" id="__imeTabUserBtn" data-tab="user">
+          <span class="material-symbols-outlined">person</span>User
+        </button>
+        <button class="ime-tab-btn" id="__imeTabCharBtn" data-tab="char">
+          <span class="material-symbols-outlined">smart_toy</span>Char
+        </button>
+      </div>
+
+      <div class="ime-tab-panel active" id="__imeBodyUser">
+      <div>
+        <div class="ime-field-label">
+          <span class="material-symbols-outlined">movie</span>
+          Scene description
+        </div>
+        <div class="ime-ta-wrap">
+          <textarea id="ime-scene" class="ime-textarea" placeholder="Describe what happens in a few words or lines... e.g. 'She walks into the tavern, soaked from the rain, and scans the room for him.'" rows="3"></textarea>
+          <div class="ime-resize-handle" title="Drag to resize"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ime-section-toggle" id="__imeOocToggle">
+          <div class="ime-field-label" style="margin-bottom:0;">
+            <span class="material-symbols-outlined">tune</span>
+            OOC Prompt - Scene
+            <span class="ime-optional-tag">optional</span>
+          </div>
+          <span class="material-symbols-outlined">expand_more</span>
+        </div>
+        <div class="ime-collapse" id="__imeOocCollapse">
+          <p class="ime-field-hint">Temporary — cleared after the enhancement is sent. Use for one-off instructions specific to this scene.</p>
+          <div class="ime-ta-wrap">
+            <textarea id="ime-ooc" class="ime-textarea ime-small" placeholder="e.g. 'Focus on her reaction, keep it internal — no dialogue.'" rows="2"></textarea>
+            <div class="ime-resize-handle" title="Drag to resize"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ime-section-toggle" id="__imeMainOocToggle">
+          <div class="ime-field-label" style="margin-bottom:0;">
+            <span class="material-symbols-outlined">bookmark</span>
+            OOC Prompt - Main
+            <span class="ime-optional-tag">optional</span>
+          </div>
+          <span class="material-symbols-outlined">expand_more</span>
+        </div>
+        <div class="ime-collapse" id="__imeMainOocCollapse">
+          <p class="ime-field-hint">Saved globally — persists across sessions and applies to every enhancement.</p>
+          <div class="ime-ta-wrap">
+            <textarea id="ime-main-ooc" class="ime-textarea ime-small" placeholder="e.g. 'Always write in third person, past tense. Keep it under 200 words.'" rows="2"></textarea>
+            <div class="ime-resize-handle" title="Drag to resize"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ime-status-row">
+        <span class="ime-spinner" id="__imeSpinner"></span>
+        <span id="__imeStatus"></span>
+      </div>
+
+      <div class="ime-error-box" id="__imeErrorBox"></div>
+
+      <div class="ime-actions-row">
+        <button id="__imeEnhanceBtn" class="ime-btn">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          <span id="__imeEnhanceBtnLabel">Enhance</span>
+        </button>
+      </div>
+
+      <div class="ime-result-wrap" id="__imeResultWrap">
+        <div class="ime-divider"></div>
+        <div class="ime-result-header">
+          <div class="ime-field-label" style="margin-bottom:0;">
+            <span class="material-symbols-outlined">edit_note</span>
+            Enhanced draft
+          </div>
+          <div class="ime-history-nav" id="__imeHistNav">
+            <button id="__imePrevBtn" class="ime-nav-btn" title="Previous reroll" type="button">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <input id="__imeHistNum" class="ime-nav-input" type="number" min="1" step="1" title="Jump to reroll number" />
+            <span class="ime-nav-sep">/</span>
+            <span id="__imeHistTotal" class="ime-nav-total">1</span>
+            <button id="__imeNextBtn" class="ime-nav-btn" title="Next reroll" type="button">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+        <div class="ime-ta-wrap">
+          <textarea id="ime-result" class="ime-textarea ime-result-ta" rows="4"></textarea>
+          <div class="ime-resize-handle" title="Drag to resize"></div>
+        </div>
+        <div class="ime-sticky-footer">
+          <div id="__imeClearConfirmRow" class="ime-confirm-row">
+            <span>Clear the enhanced draft? This can't be undone.</span>
+            <button id="__imeClearYes" class="ime-confirm-yes" type="button">Clear</button>
+            <button id="__imeClearNo" class="ime-confirm-no" type="button">Cancel</button>
+          </div>
+          <div class="ime-actions-row">
+            <button id="__imeUseBtn" class="ime-btn">
+              <span class="material-symbols-outlined">send</span>
+              Use This
+            </button>
+            <button id="__imeTryAgainBtn" class="ime-btn ime-btn-secondary">
+              <span class="material-symbols-outlined">refresh</span>
+              Try Again
+            </button>
+            <button id="__imeClearBtn" class="ime-btn ime-btn-danger ime-btn-icon" type="button" title="Clear">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="ime-tab-panel" id="__imeBodyChar">
+      <div>
+        <div class="ime-field-label">
+          <span class="material-symbols-outlined">forum</span>
+          Last assistant message
+        </div>
+        <div class="ime-char-context" id="__imeCharContext">(none loaded yet — open this tab to load it)</div>
+      </div>
+
+      <div>
+        <div class="ime-field-label">
+          <span class="material-symbols-outlined">movie</span>
+          Guidance for the reroll
+        </div>
+        <div class="ime-ta-wrap">
+          <textarea id="ime-scene-char" class="ime-textarea" placeholder="Describe how the reply should go instead... e.g. 'Have her refuse to answer and change the subject instead.'" rows="3"></textarea>
+          <div class="ime-resize-handle" title="Drag to resize"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ime-section-toggle" id="__imeOocToggleChar">
+          <div class="ime-field-label" style="margin-bottom:0;">
+            <span class="material-symbols-outlined">tune</span>
+            OOC Prompt - Scene
+            <span class="ime-optional-tag">optional</span>
+          </div>
+          <span class="material-symbols-outlined">expand_more</span>
+        </div>
+        <div class="ime-collapse" id="__imeOocCollapseChar">
+          <p class="ime-field-hint">Temporary — cleared after the reroll is applied. Use for one-off instructions specific to this scene.</p>
+          <div class="ime-ta-wrap">
+            <textarea id="ime-ooc-char" class="ime-textarea ime-small" placeholder="e.g. 'Have her hesitate before answering — lean into the tension.'" rows="2"></textarea>
+            <div class="ime-resize-handle" title="Drag to resize"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="ime-section-toggle" id="__imeMainOocToggleChar">
+          <div class="ime-field-label" style="margin-bottom:0;">
+            <span class="material-symbols-outlined">bookmark</span>
+            OOC Prompt - Main
+            <span class="ime-optional-tag">optional</span>
+          </div>
+          <span class="material-symbols-outlined">expand_more</span>
+        </div>
+        <div class="ime-collapse" id="__imeMainOocCollapseChar">
+          <p class="ime-field-hint">Saved globally — persists across sessions and applies to every reroll.</p>
+          <div class="ime-ta-wrap">
+            <textarea id="ime-main-ooc-char" class="ime-textarea ime-small" placeholder="e.g. 'Keep replies under 200 words, stay in third person.'" rows="2"></textarea>
+            <div class="ime-resize-handle" title="Drag to resize"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ime-status-row">
+        <span class="ime-spinner" id="__imeSpinnerChar"></span>
+        <span id="__imeStatusChar"></span>
+      </div>
+
+      <div class="ime-error-box" id="__imeErrorBoxChar"></div>
+
+      <div class="ime-actions-row">
+        <button id="__imeRerollBtn" class="ime-btn">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          <span id="__imeRerollBtnLabel">Guided Reroll</span>
+        </button>
+      </div>
+
+      <div class="ime-result-wrap" id="__imeResultWrapChar">
+        <div class="ime-divider"></div>
+        <div class="ime-result-header">
+          <div class="ime-field-label" style="margin-bottom:0;">
+            <span class="material-symbols-outlined">edit_note</span>
+            Rerolled reply
+          </div>
+          <div class="ime-history-nav" id="__imeHistNavChar">
+            <button id="__imePrevBtnChar" class="ime-nav-btn" title="Previous reroll" type="button">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <input id="__imeHistNumChar" class="ime-nav-input" type="number" min="1" step="1" title="Jump to reroll number" />
+            <span class="ime-nav-sep">/</span>
+            <span id="__imeHistTotalChar" class="ime-nav-total">1</span>
+            <button id="__imeNextBtnChar" class="ime-nav-btn" title="Next reroll" type="button">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
+        </div>
+        <div class="ime-ta-wrap">
+          <textarea id="ime-result-char" class="ime-textarea ime-result-ta" rows="4"></textarea>
+          <div class="ime-resize-handle" title="Drag to resize"></div>
+        </div>
+        <div class="ime-sticky-footer">
+          <div id="__imeReplaceConfirmRow" class="ime-confirm-row">
+            <span>Replace the character's message? This can't be undone.</span>
+            <button id="__imeReplaceYes" class="ime-confirm-yes" type="button">Replace</button>
+            <button id="__imeReplaceNo" class="ime-confirm-no" type="button">Cancel</button>
+          </div>
+          <div id="__imeClearConfirmRowChar" class="ime-confirm-row">
+            <span>Clear the rerolled reply? This can't be undone.</span>
+            <button id="__imeClearYesChar" class="ime-confirm-yes" type="button">Clear</button>
+            <button id="__imeClearNoChar" class="ime-confirm-no" type="button">Cancel</button>
+          </div>
+          <div class="ime-actions-row">
+            <button id="__imeUseBtnChar" class="ime-btn">
+              <span class="material-symbols-outlined">check</span>
+              Replace Message
+            </button>
+            <button id="__imeTryAgainBtnChar" class="ime-btn ime-btn-secondary">
+              <span class="material-symbols-outlined">refresh</span>
+              Try Again
+            </button>
+            <button id="__imeClearBtnChar" class="ime-btn ime-btn-danger ime-btn-icon" type="button" title="Clear">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (async function () {
+    console.log('[CCC] Enhance Message plugin loaded');
+
+    // Shared theme key with other CCC panels so accent/dark-mode stay in sync
+    const THEME_KEY = '__cccTheme';
+    // Persistent OOC prompt keys — separate vars for Enhancer vs Reroll
+    const MAIN_OOC_KEY      = '__imeMainOoc';
+    const MAIN_OOC_KEY_CHAR = '__imeMainOocChar';
+    const SWATCHES = [
+      { name: "Red", ac: "255,100,90", grad0: "220,65,55", grad1: "190,40,35", border: "160,25,22", hover: "255,120,110" },
+      { name: "Orange", ac: "255,160,60", grad0: "230,130,30", grad1: "200,105,15", border: "175,85,10", hover: "255,180,80" },
+      { name: "Yellow", ac: "200,153,40", grad0: "185,130,20", grad1: "155,105,10", border: "125,82,5", hover: "235,175,50" },
+      { name: "Green", ac: "60,185,80", grad0: "40,160,55", grad1: "25,130,40", border: "18,105,30", hover: "80,210,95" },
+      { name: "Teal", ac: "55,200,190", grad0: "30,170,160", grad1: "20,140,135", border: "12,115,110", hover: "80,220,210" },
+      { name: "Blue", ac: "88,165,255", grad0: "50,130,250", grad1: "30,110,235", border: "26,101,224", hover: "56,139,255" },
+      { name: "Purple", ac: "190,140,255", grad0: "160,100,255", grad1: "130,70,220", border: "110,50,200", hover: "210,160,255" },
+      { name: "Pink", ac: "255,130,200", grad0: "230,90,170", grad1: "200,60,145", border: "170,40,120", hover: "255,150,215" }
+    ];
+
+    async function loadTheme() {
+      try { const t = await tavo.get(THEME_KEY, 'global'); return t ? t : {}; }
+      catch (e) { return {}; }
+    }
+    async function saveTheme() {
+      try { await tavo.set(THEME_KEY, theme, 'global'); } catch (e) {}
+    }
+
+    let theme = Object.assign({ dark: true, swatch: 5 }, await loadTheme());
+
+    // History stack: keeps previous enhanced drafts so "Try Again" never
+    // destroys earlier attempts — user can freely navigate between rerolls
+    // via the arrow buttons or by typing a reroll number.
+    let history = [];
+    let historyIndex = -1;
+    let busy = false;
+
+    const overlay = document.getElementById('__imeOverlay');
+    const inner = document.getElementById('__imeInner');
+    const fab = document.getElementById('__imeFab');
+    const closeBtn = document.getElementById('__imeCloseBtn');
+    const themeToggle = document.getElementById('__imeThemeToggle');
+    const swatchRow = document.getElementById('imeSwatchRow');
+
+    const sceneInput = document.getElementById('ime-scene');
+    const mainOocInput  = document.getElementById('ime-main-ooc');
+    const mainOocToggle = document.getElementById('__imeMainOocToggle');
+    const mainOocCollapse = document.getElementById('__imeMainOocCollapse');
+    const oocInput = document.getElementById('ime-ooc');
+    const oocToggle = document.getElementById('__imeOocToggle');
+    const oocCollapse = document.getElementById('__imeOocCollapse');
+
+    const enhanceBtn = document.getElementById('__imeEnhanceBtn');
+    const enhanceBtnLabel = document.getElementById('__imeEnhanceBtnLabel');
+    const tryAgainBtn = document.getElementById('__imeTryAgainBtn');
+    const useBtn = document.getElementById('__imeUseBtn');
+    const histNav = document.getElementById('__imeHistNav');
+    const prevBtn = document.getElementById('__imePrevBtn');
+    const nextBtn = document.getElementById('__imeNextBtn');
+    const histNum = document.getElementById('__imeHistNum');
+    const histTotal = document.getElementById('__imeHistTotal');
+
+    const resultWrap = document.getElementById('__imeResultWrap');
+    const resultTa = document.getElementById('ime-result');
+    const spinner = document.getElementById('__imeSpinner');
+    const statusEl = document.getElementById('__imeStatus');
+    const errorBox = document.getElementById('__imeErrorBox');
+    const clearBtn = document.getElementById('__imeClearBtn');
+    const clearConfirmRow = document.getElementById('__imeClearConfirmRow');
+    const clearYes = document.getElementById('__imeClearYes');
+    const clearNo = document.getElementById('__imeClearNo');
+
+    // Char tab refs
+    const tabUserBtn = document.getElementById('__imeTabUserBtn');
+    const tabCharBtn = document.getElementById('__imeTabCharBtn');
+    const bodyUser = document.getElementById('__imeBodyUser');
+    const bodyChar = document.getElementById('__imeBodyChar');
+    const charContext = document.getElementById('__imeCharContext');
+
+    const sceneInputChar = document.getElementById('ime-scene-char');
+    const mainOocInputChar  = document.getElementById('ime-main-ooc-char');
+    const mainOocToggleChar = document.getElementById('__imeMainOocToggleChar');
+    const mainOocCollapseChar = document.getElementById('__imeMainOocCollapseChar');
+    const oocInputChar = document.getElementById('ime-ooc-char');
+    const oocToggleChar = document.getElementById('__imeOocToggleChar');
+    const oocCollapseChar = document.getElementById('__imeOocCollapseChar');
+
+    const rerollBtn = document.getElementById('__imeRerollBtn');
+    const rerollBtnLabel = document.getElementById('__imeRerollBtnLabel');
+    const tryAgainBtnChar = document.getElementById('__imeTryAgainBtnChar');
+    const useBtnChar = document.getElementById('__imeUseBtnChar');
+    const histNavChar = document.getElementById('__imeHistNavChar');
+    const prevBtnChar = document.getElementById('__imePrevBtnChar');
+    const nextBtnChar = document.getElementById('__imeNextBtnChar');
+    const histNumChar = document.getElementById('__imeHistNumChar');
+    const histTotalChar = document.getElementById('__imeHistTotalChar');
+
+    const resultWrapChar = document.getElementById('__imeResultWrapChar');
+    const resultTaChar = document.getElementById('ime-result-char');
+    const spinnerChar = document.getElementById('__imeSpinnerChar');
+    const statusElChar = document.getElementById('__imeStatusChar');
+    const errorBoxChar = document.getElementById('__imeErrorBoxChar');
+    const clearBtnChar = document.getElementById('__imeClearBtnChar');
+    const clearConfirmRowChar = document.getElementById('__imeClearConfirmRowChar');
+    const clearYesChar = document.getElementById('__imeClearYesChar');
+    const clearNoChar = document.getElementById('__imeClearNoChar');
+    const replaceConfirmRow = document.getElementById('__imeReplaceConfirmRow');
+    const replaceYes = document.getElementById('__imeReplaceYes');
+    const replaceNo = document.getElementById('__imeReplaceNo');
+
+    let historyChar = [];
+    let historyIndexChar = -1;
+    let busyChar = false;
+    let targetMessage = null; // the character message we will overwrite on Replace
+
+    // ── FAB visibility (Message Enhancer's own floating button — separate
+    // from the unified FAB's "showFab" setting, which controls a different button)
+    (async () => {
+      try {
+        const cfg = await loadCfg();
+        if (cfg && cfg.showEnhancerFab === false) {
+          fab.style.display = 'none';
+        }
+      } catch (e) {}
+    })();
+
+    // ── FAB position restore
+    const POS_KEY = '__imeFabPos';
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(POS_KEY) || '{}'); } catch (e) {}
+    fab.style.right = (saved.right != null ? saved.right : 20) + 'px';
+    fab.style.bottom = (saved.bottom != null ? saved.bottom : 210) + 'px';
+
+    // ── FAB idle fade
+    fab.style.transition = 'opacity 0.4s ease, transform 0.15s';
+    let fabIdleTimer = null;
+    function fabWake() {
+      fab.style.opacity = '0.5';
+      clearTimeout(fabIdleTimer);
+      fabIdleTimer = setTimeout(() => { fab.style.opacity = '0.25'; }, 2500);
+    }
+    fab.addEventListener('mouseenter', fabWake);
+    fab.addEventListener('touchstart', fabWake, { passive: true });
+    document.addEventListener('touchstart', fabWake, { passive: true });
+    document.addEventListener('pointerdown', fabWake, { passive: true });
+    fabWake();
+
+    // ── FAB drag logic
+    let dragging = false, startX, startY, startRight, startBottom, moved;
+    function onDown(e) {
+      const pt = e.touches ? e.touches[0] : e;
+      dragging = true;
+      moved = false;
+      startX = pt.clientX;
+      startY = pt.clientY;
+      startRight = parseInt(fab.style.right, 10);
+      startBottom = parseInt(fab.style.bottom, 10);
+      e.preventDefault();
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      const pt = e.touches ? e.touches[0] : e;
+      const dx = pt.clientX - startX;
+      const dy = pt.clientY - startY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+      const SIZE = 52;
+      let newRight = Math.max(0, Math.min(window.innerWidth - SIZE, startRight - dx));
+      let newBottom = Math.max(0, Math.min(window.innerHeight - SIZE, startBottom - dy));
+      fab.style.right = newRight + 'px';
+      fab.style.bottom = newBottom + 'px';
+      e.preventDefault();
+    }
+    function onUp() {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        localStorage.setItem(POS_KEY, JSON.stringify({
+          right: parseInt(fab.style.right, 10),
+          bottom: parseInt(fab.style.bottom, 10)
+        }));
+      } catch (e) {}
+      if (!moved) imeOpen();
+    }
+    fab.addEventListener('mousedown', onDown, { passive: false });
+    fab.addEventListener('touchstart', onDown, { passive: false });
+    window.addEventListener('mousemove', onMove, { passive: false });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchend', onUp);
+
+    function applyTheme() {
+      const t = SWATCHES[theme.swatch];
+      inner.classList.toggle('ime-light', !theme.dark);
+      themeToggle.querySelector('.material-symbols-outlined').textContent = theme.dark ? 'dark_mode' : 'light_mode';
+      inner.style.setProperty('--ac', `rgba(${t.ac},1)`);
+      inner.style.setProperty('--ac-half', `rgba(${t.ac},.502)`);
+      inner.style.setProperty('--ac-dim', `rgba(${t.ac},.133)`);
+      inner.style.setProperty('--ac-grad-top', `rgba(${t.grad0},1)`);
+      inner.style.setProperty('--ac-grad-bot', `rgba(${t.grad1},1)`);
+      inner.style.setProperty('--ac-border', `rgba(${t.border},1)`);
+      inner.style.setProperty('--ac-hover-top', `rgba(${t.hover},1)`);
+      inner.style.setProperty('--ac-shadow', `rgba(${t.grad0},.251)`);
+    }
+
+    function buildSwatches() {
+      swatchRow.innerHTML = '';
+      SWATCHES.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'ime-swatch' + (i === theme.swatch ? ' active' : '');
+        btn.title = c.name;
+        btn.style.background = `rgba(${c.ac},1)`;
+        btn.addEventListener('click', () => {
+          theme.swatch = i;
+          applyTheme();
+          saveTheme();
+          swatchRow.querySelectorAll('.ime-swatch').forEach((s, j) => s.classList.toggle('active', j === i));
+        });
+        swatchRow.appendChild(btn);
+      });
+    }
+
+    function attachResizeHandle(handle, ta) {
+      if (!handle || handle.__imeAttached) return;
+      handle.__imeAttached = true;
+      const minH = parseFloat(getComputedStyle(ta).minHeight) || 40;
+      const maxH = parseFloat(getComputedStyle(ta).maxHeight) || 320;
+      let startY = 0, startH = 0, dragActive = false;
+      function onMoveH(e) {
+        if (!dragActive) return;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        const next = Math.min(maxH, Math.max(minH, startH + (y - startY)));
+        ta.style.height = next + 'px';
+        e.preventDefault();
+      }
+      function onEndH() {
+        if (!dragActive) return;
+        dragActive = false;
+        handle.classList.remove('dragging');
+        window.removeEventListener('mousemove', onMoveH);
+        window.removeEventListener('mouseup', onEndH);
+        window.removeEventListener('touchmove', onMoveH);
+        window.removeEventListener('touchend', onEndH);
+      }
+      function onStartH(e) {
+        dragActive = true;
+        handle.classList.add('dragging');
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        startH = ta.offsetHeight;
+        window.addEventListener('mousemove', onMoveH);
+        window.addEventListener('mouseup', onEndH);
+        window.addEventListener('touchmove', onMoveH, { passive: false });
+        window.addEventListener('touchend', onEndH);
+        e.preventDefault();
+      }
+      handle.addEventListener('mousedown', onStartH);
+      handle.addEventListener('touchstart', onStartH, { passive: false });
+      handle.addEventListener('dblclick', () => { ta.style.height = ''; });
+    }
+    document.querySelectorAll('#__imeInner .ime-resize-handle').forEach(h => {
+      attachResizeHandle(h, h.parentElement.querySelector('textarea'));
+    });
+
+    mainOocToggle.addEventListener('click', () => {
+      const open = mainOocCollapse.classList.toggle('open');
+      mainOocToggle.classList.toggle('open', open);
+    });
+    oocToggle.addEventListener('click', () => {
+      const open = oocCollapse.classList.toggle('open');
+      oocToggle.classList.toggle('open', open);
+    });
+    mainOocToggleChar.addEventListener('click', () => {
+      const open = mainOocCollapseChar.classList.toggle('open');
+      mainOocToggleChar.classList.toggle('open', open);
+    });
+    oocToggleChar.addEventListener('click', () => {
+      const open = oocCollapseChar.classList.toggle('open');
+      oocToggleChar.classList.toggle('open', open);
+    });
+
+    function switchTab(tab) {
+      const isUser = tab === 'user';
+      tabUserBtn.classList.toggle('active', isUser);
+      tabCharBtn.classList.toggle('active', !isUser);
+      bodyUser.classList.toggle('active', isUser);
+      bodyChar.classList.toggle('active', !isUser);
+      if (!isUser) loadLastCharMessage();
+    }
+    tabUserBtn.addEventListener('click', () => switchTab('user'));
+    tabCharBtn.addEventListener('click', () => switchTab('char'));
+
+    function ltEscape(s) {
+      const d = document.createElement('div');
+      d.innerText = s;
+      return d.innerHTML;
+    }
+
+    async function loadLastCharMessage() {
+      try {
+        const found = await tavo.message.find(-1, { role: 'assistant' });
+        const msg = found && found[0] ? found[0] : null;
+        targetMessage = msg;
+        if (!msg) {
+          charContext.innerHTML = 'none found in this chat yet.';
+          rerollBtn.disabled = true;
+          return;
+        }
+        rerollBtn.disabled = false;
+        charContext.innerHTML = ltEscape(msg.content);
+      } catch (e) {
+        charContext.innerHTML = 'could not load (' + ltEscape(e.message || String(e)) + ')';
+        rerollBtn.disabled = true;
+      }
+    }
+
+    async function loadCfg() {
+      try { return tavo.plugin.config.all(); } catch (e) { return {}; }
+    }
+
+    function setBusy(isBusy, label) {
+      busy = isBusy;
+      spinner.classList.toggle('spinning', isBusy);
+      statusEl.textContent = label || '';
+      enhanceBtn.disabled = isBusy;
+      tryAgainBtn.disabled = isBusy;
+      useBtn.disabled = isBusy;
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.add('visible');
+    }
+    function clearError() {
+      errorBox.textContent = '';
+      errorBox.classList.remove('visible');
+    }
+
+    function goToHistoryIndex(idx) {
+      if (!history.length) return;
+      const clamped = Math.min(Math.max(idx, 0), history.length - 1);
+      historyIndex = clamped;
+      renderResult();
+    }
+
+    function renderResult() {
+      const entry = history[historyIndex];
+      resultTa.value = entry ? entry.text : '';
+      const total = history.length;
+      histNav.classList.toggle('visible', total > 0);
+      histNum.value = total ? historyIndex + 1 : '';
+      histNum.max = total;
+      histTotal.textContent = total;
+      prevBtn.disabled = historyIndex <= 0;
+      nextBtn.disabled = historyIndex >= total - 1;
+      tryAgainBtn.querySelector('span:not(.material-symbols-outlined)')
+        ? null : null;
+    }
+
+    function buildPrompt(scene, sceneOoc, mainOoc, cfg) {
+      const defaultInstruction = (cfg && cfg.defaultOoc)
+        ? cfg.defaultOoc
+        : "enhance this message, write it from {{user}}'s perspective. You are interpreting {{user}}. You will NOT write for {{group}}.";
+      const lengthHint = cfg && cfg.length ? `Target length: ${cfg.length}.` : '';
+      const combinedOoc = [mainOoc && mainOoc.trim(), sceneOoc && sceneOoc.trim()].filter(Boolean).join(' ');
+      const customOoc = combinedOoc ? ` ${combinedOoc}` : '';
+      const parts = [
+        `Scene description to enhance:\n${scene.trim()}`,
+        `[OOC: ${defaultInstruction} ${lengthHint}${customOoc} Do not write any dialogue, action, or narration for {{group}}. Stop before any other character would respond.]`.trim(),
+      ];
+      return parts.join('\n\n');
+    }
+
+    async function runEnhance() {
+      const scene = sceneInput.value.trim();
+      if (!scene) {
+        showError('Write a scene description first.');
+        return;
+      }
+      clearError();
+      setBusy(true, 'Enhancing...');
+      try {
+        const cfg = await loadCfg();
+        const ooc = oocInput.value;
+        const mainOoc = mainOocInput.value;
+        const prompt = buildPrompt(scene, ooc, mainOoc, cfg);
+        const options = { context: true };
+        if (cfg && cfg.presetId) options.preset = { id: cfg.presetId };
+        const text = await tavo.generate(prompt, options);
+        history = history.slice(0, historyIndex + 1);
+        history.push({ text: text.trim(), scene, ooc });
+        historyIndex = history.length - 1;
+        resultWrap.classList.add('visible');
+        renderResult();
+        setBusy(false, 'Done');
+        enhanceBtnLabel.textContent = 'Re-enhance';
+      } catch (e) {
+        setBusy(false, '');
+        showError('Generation failed: ' + (e && e.message ? e.message : String(e)));
+      }
+    }
+
+    async function runTryAgain() {
+      const scene = sceneInput.value.trim();
+      if (!scene) {
+        showError('Write a scene description first.');
+        return;
+      }
+      clearError();
+      setBusy(true, 'Trying again...');
+      try {
+        const cfg = await loadCfg();
+        const ooc = oocInput.value;
+        const mainOoc = mainOocInput.value;
+        const prompt = buildPrompt(scene, ooc, mainOoc, cfg);
+        const options = { context: true };
+        if (cfg && cfg.presetId) options.preset = { id: cfg.presetId };
+        const text = await tavo.generate(prompt, options);
+        // Old enhance is kept in history; we just push a new one after it.
+        history = history.slice(0, historyIndex + 1);
+        history.push({ text: text.trim(), scene, ooc });
+        historyIndex = history.length - 1;
+        renderResult();
+        setBusy(false, 'Done');
+      } catch (e) {
+        setBusy(false, '');
+        showError('Generation failed: ' + (e && e.message ? e.message : String(e)));
+      }
+    }
+
+    function handleHistNumChange() {
+      const val = parseInt(histNum.value, 10);
+      if (Number.isNaN(val)) {
+        renderResult();
+        return;
+      }
+      goToHistoryIndex(val - 1);
+    }
+
+    function clearDraft() {
+      history = [];
+      historyIndex = -1;
+      resultTa.value = '';
+      sceneInput.value = '';
+      oocInput.value = '';          // Scene OOC is ephemeral — clears with the draft
+      resultWrap.classList.remove('visible');
+      histNav.classList.remove('visible');
+      enhanceBtnLabel.textContent = 'Enhance';
+      clearConfirmRow.classList.remove('visible');
+      clearError();
+    }
+
+    async function runUse() {
+      const text = resultTa.value.trim();
+      if (!text) return;
+      await tavo.input.set(text);
+      tavo.utils.toast('Sent to input box');
+      // The draft has been applied — clear it completely so a stale
+      // enhancement can't be reused or resent by mistake.
+      clearDraft();
+      imeClose();
+    }
+
+    enhanceBtn.addEventListener('click', () => {
+      if (busy) return;
+      if (history.length && historyIndex === history.length - 1 && resultWrap.classList.contains('visible')) {
+        runTryAgain();
+      } else {
+        runEnhance();
+      }
+    });
+    tryAgainBtn.addEventListener('click', () => { if (!busy) runTryAgain(); });
+    useBtn.addEventListener('click', runUse);
+    clearBtn.addEventListener('click', () => {
+      if (!history.length && !resultTa.value.trim()) return;
+      clearConfirmRow.classList.add('visible');
+    });
+    clearYes.addEventListener('click', clearDraft);
+    clearNo.addEventListener('click', () => clearConfirmRow.classList.remove('visible'));
+    prevBtn.addEventListener('click', () => goToHistoryIndex(historyIndex - 1));
+    nextBtn.addEventListener('click', () => goToHistoryIndex(historyIndex + 1));
+    histNum.addEventListener('change', handleHistNumChange);
+    histNum.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); handleHistNumChange(); histNum.blur(); }
+    });
+
+    // ── Char tab (guided reroll) ─────────────────────────────────────
+
+    function setBusyChar(isBusy, label) {
+      busyChar = isBusy;
+      spinnerChar.classList.toggle('spinning', isBusy);
+      statusElChar.textContent = label || '';
+      rerollBtn.disabled = isBusy || !targetMessage;
+      tryAgainBtnChar.disabled = isBusy;
+      useBtnChar.disabled = isBusy;
+    }
+    function showErrorChar(msg) {
+      errorBoxChar.textContent = msg;
+      errorBoxChar.classList.add('visible');
+    }
+    function clearErrorChar() {
+      errorBoxChar.textContent = '';
+      errorBoxChar.classList.remove('visible');
+    }
+    function goToHistoryIndexChar(idx) {
+      if (!historyChar.length) return;
+      const clamped = Math.min(Math.max(idx, 0), historyChar.length - 1);
+      historyIndexChar = clamped;
+      renderResultChar();
+    }
+
+    function renderResultChar() {
+      const entry = historyChar[historyIndexChar];
+      resultTaChar.value = entry ? entry.text : '';
+      const total = historyChar.length;
+      histNavChar.classList.toggle('visible', total > 0);
+      histNumChar.value = total ? historyIndexChar + 1 : '';
+      histNumChar.max = total;
+      histTotalChar.textContent = total;
+      prevBtnChar.disabled = historyIndexChar <= 0;
+      nextBtnChar.disabled = historyIndexChar >= total - 1;
+    }
+
+    function buildRerollPrompt(originalReply, guidance, sceneOoc, mainOoc, cfg) {
+      const defaultInstruction = (cfg && cfg.defaultOoc)
+        ? cfg.defaultOoc
+        : 'Rewrite the character\'s last reply as a guided reroll: keep the same characters, setting, and continuity, but follow the new guidance below. Do not add meta commentary, only output the final in-character reply.';
+      const lengthHint = cfg && cfg.length ? `Target length: ${cfg.length}.` : '';
+      const combinedOoc = [mainOoc && mainOoc.trim(), sceneOoc && sceneOoc.trim()].filter(Boolean).join(' ');
+      const customOoc = combinedOoc ? ` ${combinedOoc}` : '';
+      const parts = [
+        `Original reply being rerolled:\n${originalReply}`,
+        `Guidance for how the reroll should differ:\n${guidance.trim()}`,
+        `[OOC: ${defaultInstruction} ${lengthHint}${customOoc} Output only the rerolled in-character reply for this one character. No meta commentary, no narration or dialogue for {{user}} or anyone else in {{group}}.]`.trim(),
+      ];
+      return parts.join('\n\n');
+    }
+
+    async function generateReroll() {
+      const guidance = sceneInputChar.value.trim();
+      if (!guidance) {
+        showErrorChar('Describe how the reroll should go first.');
+        return null;
+      }
+      if (!targetMessage) {
+        showErrorChar('No character message found to reroll.');
+        return null;
+      }
+      clearErrorChar();
+      const cfg = await loadCfg();
+      const ooc = oocInputChar.value;
+      const mainOoc = mainOocInputChar.value;
+      const prompt = buildRerollPrompt(targetMessage.content, guidance, ooc, mainOoc, cfg);
+      const options = { context: true };
+      if (cfg && cfg.presetId) options.preset = { id: cfg.presetId };
+      return tavo.generate(prompt, options);
+    }
+
+    async function runReroll() {
+      setBusyChar(true, 'Rerolling...');
+      try {
+        const text = await generateReroll();
+        if (text == null) { setBusyChar(false, ''); return; }
+        historyChar = historyChar.slice(0, historyIndexChar + 1);
+        historyChar.push({ text: text.trim() });
+        historyIndexChar = historyChar.length - 1;
+        resultWrapChar.classList.add('visible');
+        renderResultChar();
+        setBusyChar(false, 'Done');
+        rerollBtnLabel.textContent = 'Reroll Again';
+      } catch (e) {
+        setBusyChar(false, '');
+        showErrorChar('Generation failed: ' + (e && e.message ? e.message : String(e)));
+      }
+    }
+
+    async function runTryAgainChar() {
+      setBusyChar(true, 'Trying again...');
+      try {
+        const text = await generateReroll();
+        if (text == null) { setBusyChar(false, ''); return; }
+        historyChar = historyChar.slice(0, historyIndexChar + 1);
+        historyChar.push({ text: text.trim() });
+        historyIndexChar = historyChar.length - 1;
+        renderResultChar();
+        setBusyChar(false, 'Done');
+      } catch (e) {
+        setBusyChar(false, '');
+        showErrorChar('Generation failed: ' + (e && e.message ? e.message : String(e)));
+      }
+    }
+
+    function handleHistNumChangeChar() {
+      const val = parseInt(histNumChar.value, 10);
+      if (Number.isNaN(val)) {
+        renderResultChar();
+        return;
+      }
+      goToHistoryIndexChar(val - 1);
+    }
+
+    function clearDraftChar() {
+      historyChar = [];
+      historyIndexChar = -1;
+      resultTaChar.value = '';
+      sceneInputChar.value = '';
+      oocInputChar.value = '';      // Scene OOC is ephemeral — clears with the draft
+      resultWrapChar.classList.remove('visible');
+      histNavChar.classList.remove('visible');
+      rerollBtnLabel.textContent = 'Guided Reroll';
+      clearConfirmRowChar.classList.remove('visible');
+      replaceConfirmRow.classList.remove('visible');
+      clearErrorChar();
+    }
+
+    async function runReplace() {
+      const text = resultTaChar.value.trim();
+      if (!text || !targetMessage) return;
+      const updated = { id: targetMessage.id, content: text };
+      const ok = await tavo.message.update(updated);
+      if (ok == null) {
+        showErrorChar('Failed to update the message.');
+        return;
+      }
+      tavo.utils.toast('Message replaced');
+      // Keep the target message content in sync locally in case of another reroll.
+      targetMessage.content = text;
+      // Applied and irreversible — clear the draft so it can't be reapplied by mistake.
+      clearDraftChar();
+      imeClose();
+    }
+
+    rerollBtn.addEventListener('click', () => {
+      if (busyChar) return;
+      if (historyChar.length && historyIndexChar === historyChar.length - 1 && resultWrapChar.classList.contains('visible')) {
+        runTryAgainChar();
+      } else {
+        runReroll();
+      }
+    });
+    tryAgainBtnChar.addEventListener('click', () => { if (!busyChar) runTryAgainChar(); });
+    // Replacing the character's message overwrites it permanently, so require
+    // an explicit confirmation before it's applied — same warning pattern
+    // used for Clear and for the LTM manager's delete confirmations.
+    useBtnChar.addEventListener('click', () => {
+      const text = resultTaChar.value.trim();
+      if (!text || !targetMessage) return;
+      clearConfirmRowChar.classList.remove('visible');
+      replaceConfirmRow.classList.add('visible');
+    });
+    replaceYes.addEventListener('click', () => {
+      replaceConfirmRow.classList.remove('visible');
+      runReplace();
+    });
+    replaceNo.addEventListener('click', () => replaceConfirmRow.classList.remove('visible'));
+    clearBtnChar.addEventListener('click', () => {
+      if (!historyChar.length && !resultTaChar.value.trim()) return;
+      replaceConfirmRow.classList.remove('visible');
+      clearConfirmRowChar.classList.add('visible');
+    });
+    clearYesChar.addEventListener('click', clearDraftChar);
+    clearNoChar.addEventListener('click', () => clearConfirmRowChar.classList.remove('visible'));
+    prevBtnChar.addEventListener('click', () => goToHistoryIndexChar(historyIndexChar - 1));
+    nextBtnChar.addEventListener('click', () => goToHistoryIndexChar(historyIndexChar + 1));
+    histNumChar.addEventListener('change', handleHistNumChangeChar);
+    histNumChar.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); handleHistNumChangeChar(); histNumChar.blur(); }
+    });
+
+    // ── Main OOC: save whenever the textarea loses focus or content changes
+    mainOocInput.addEventListener('change', async () => {
+      try { await tavo.set(MAIN_OOC_KEY, mainOocInput.value, 'global'); } catch (e) {}
+    });
+    mainOocInputChar.addEventListener('change', async () => {
+      try { await tavo.set(MAIN_OOC_KEY_CHAR, mainOocInputChar.value, 'global'); } catch (e) {}
+    });
+
+    function imeOpen(evt) {
+      overlay.classList.add('visible');
+      const tab = (evt && evt.detail && evt.detail.tab) ? evt.detail.tab : 'user';
+      switchTab(tab);
+      (async () => {
+        const cfg = await loadCfg();
+        if (cfg) {
+          // Panel-local theme override only if plugin settings explicitly set one;
+          // otherwise shared __cccTheme (loaded above) wins.
+          overlay.querySelector('#__imeInner')?.classList.toggle('cm-iphone-mode', !!cfg.iphoneMode);
+        }
+        // Load persisted Main OOC prompts from global storage
+        try {
+          const v = await tavo.get(MAIN_OOC_KEY, 'global');
+          if (v != null) mainOocInput.value = v;
+        } catch (e) {}
+        try {
+          const v = await tavo.get(MAIN_OOC_KEY_CHAR, 'global');
+          if (v != null) mainOocInputChar.value = v;
+        } catch (e) {}
+        buildSwatches();
+        applyTheme();
+      })();
+    }
+    function imeClose() {
+      overlay.classList.remove('visible');
+    }
+
+    closeBtn.addEventListener('click', imeClose);
+    themeToggle.addEventListener('click', () => {
+      theme.dark = !theme.dark;
+      applyTheme();
+      saveTheme();
+    });
+    overlay.addEventListener('mousedown', (e) => {
+      if (e.target === overlay) imeClose();
+    });
+
+    window.addEventListener('ime-open-enhancer', imeOpen);
+  })();
+
+  // ── Textarea focus: scroll into view ──────────────────────────────────────
+  (function () {
+    var inner = document.getElementById('__imeInner');
+    if (!inner) return;
+    inner.addEventListener('focusin', function (e) {
+      if (e.target.tagName === 'TEXTAREA') {
+        e.target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    });
+  })();
+</script>

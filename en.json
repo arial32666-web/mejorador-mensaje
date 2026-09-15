@@ -1,0 +1,17 @@
+{
+  "plugin.name": "Message Enhancer",
+  "plugin.description": "Turn a short scene description into a full enhanced message draft (User tab), or guide a reroll of the character's last reply (Char tab), with a custom OOC prompt and Try Again support.",
+  "actions.enhanceMessage": "Enhance Message",
+  "actions.guidedReroll": "Guided Reroll",
+  "settings.info": "Configure the default behavior of Enhance Message. A custom OOC prompt can still be added per-use in the panel.",
+  "settings.showFab.label": "Show floating button (FAB)",
+  "settings.showEnhancerFab.label": "Show Message Enhancer floating button",
+  "settings.defaultOoc.label": "Default OOC instruction",
+  "settings.length.label": "Target length",
+  "settings.length.short": "Short",
+  "settings.length.medium": "Medium",
+  "settings.length.long": "Long",
+  "settings.presetId.label": "Preset ID override (optional, leave blank to use current chat preset)",
+  "settings.iphoneMode": "iPhone Mode",
+  "settings.iphoneModeInfo": "Panel can't be closed."
+}

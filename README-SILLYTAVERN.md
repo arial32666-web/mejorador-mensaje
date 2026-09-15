@@ -1,5 +1,14 @@
 # Message Enhancer (CCC) para SillyTavern (puerto no oficial)
 
+> **Actualización:** se corrigió un bug real de la primera versión de este
+> puerto: si tenías instalada también "Crossroads" (u otra extensión CCC
+> portada de la misma forma), las dos competían por la misma variable global
+> `tavo` y la que cargaba segunda rompía a la primera — esto es justo lo que
+> hacía que el botón flotante no apareciera. Ahora cada extensión usa su
+> propia copia aislada de `tavo` — pueden convivir sin problema. Si ya tenías
+> la versión vieja instalada, reemplaza estos archivos por los nuevos (mismo
+> procedimiento de instalación de siempre).
+
 Plugin original: **CCC - Message Enhancer v1.7.7**, de Clowuds, para la app
 Tavo. Puerto independiente — no comparte código ni estado con el puerto de
 Crossroads que armamos antes, aunque ambos vengan de la familia "CCC".

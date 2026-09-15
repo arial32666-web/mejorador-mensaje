@@ -3,10 +3,20 @@
  * ====================================================================
  *
  * Igual que en el puerto de Crossroads: ni entry.js ni ui/panel-me.html se
- * tocaron. Este archivo solo crea un `window.tavo` que por dentro habla con
+ * tocaron. Este archivo crea un objeto `tavo` que por dentro habla con
  * SillyTavern. Esta extensión es completamente independiente de Crossroads
  * — no comparte estado, no depende de que la otra esté instalada — aunque
  * ambas vengan de la misma familia de plugins "CCC" en Tavo.
+ *
+ * IMPORTANTE — por qué esto ya NO usa `window.tavo`:
+ * Si tienes instalada otra extensión CCC portada de la misma forma (p. ej.
+ * "Crossroads"), y las dos pusieran su propio objeto en `window.tavo`, la que
+ * cargue después le borraría la variable global a la que cargó primero y una
+ * de las dos quedaría rota — esto es justo lo que le pasaba a esta extensión.
+ * Por eso este archivo NO toca `window.tavo`: expone una fábrica con nombre
+ * único (`window.__imeBuildTavo`), y index.js ejecuta entry.js/panel-me.html
+ * pasándoles SU PROPIA copia de `tavo` como variable local — nunca global,
+ * nunca compartida con otra extensión.
  *
  * SUPUESTOS SOBRE LA API DE SILLYTAVERN
  * --------------------------------------
@@ -20,7 +30,7 @@
  * y leer los ajustes configurables del plugin (`tavo.plugin.config.all()`).
  */
 
-(function () {
+window.__imeBuildTavo = function () {
   "use strict";
 
   // ---------------------------------------------------------------------
@@ -268,10 +278,10 @@
   }
 
   // ---------------------------------------------------------------------
-  // 8. Ensamblado del objeto global `tavo`
+  // 8. Ensamblado del objeto `tavo` (local a esta extensión, no global)
   // ---------------------------------------------------------------------
 
-  window.tavo = {
+  var tavo = {
     get: readVar,
     set: writeVar,
     generate: tavoGenerate,
@@ -286,8 +296,11 @@
   };
 
   // Se expone para que index.js pueda construir el panel de ajustes sin
-  // duplicar la lógica de lectura/escritura.
+  // duplicar la lógica de lectura/escritura. Nombre único — no choca con
+  // ninguna otra extensión.
   window.__imeSettingsBridge = { read: pluginConfig.all, write: pluginConfig.set, defaults: DEFAULT_SETTINGS };
 
   wireOpenActions();
-})();
+
+  return tavo;
+};

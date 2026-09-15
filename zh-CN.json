@@ -1,0 +1,17 @@
+{
+  "plugin.name": "消息增强",
+  "plugin.description": "将简短的场景描述扩展为完整的增强消息草稿（用户标签页），或引导对角色最后回复的重新生成（角色标签页），支持自定义 OOC 提示和重试功能。",
+  "actions.enhanceMessage": "增强消息",
+  "actions.guidedReroll": "引导重生成",
+  "settings.info": "配置消息增强的默认行为。每次使用时仍可在面板中添加自定义 OOC 提示。",
+  "settings.showFab.label": "显示浮动按钮（FAB）",
+  "settings.showEnhancerFab.label": "显示消息增强浮动按钮",
+  "settings.defaultOoc.label": "默认 OOC 指令",
+  "settings.length.label": "目标长度",
+  "settings.length.short": "短",
+  "settings.length.medium": "中",
+  "settings.length.long": "长",
+  "settings.presetId.label": "预设 ID 覆盖（可选，留空则使用当前聊天预设）",
+  "settings.iphoneMode": "iPhone 模式",
+  "settings.iphoneModeInfo": "面板无法关闭。"
+}

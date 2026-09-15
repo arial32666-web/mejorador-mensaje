@@ -1,0 +1,17 @@
+{
+  "plugin.name": "Mejorar Mensaje",
+  "plugin.description": "Convierte una breve descripción de escena en un borrador de mensaje mejorado (pestaña Usuario), o guía un reintento de la última respuesta del personaje (pestaña Personaje), con un prompt OOC personalizado y soporte para Reintentar.",
+  "actions.enhanceMessage": "Mejorar Mensaje",
+  "actions.guidedReroll": "Reintento Guiado",
+  "settings.info": "Configura el comportamiento predeterminado de Mejorar Mensaje. Aún puedes añadir un prompt OOC personalizado en cada uso desde el panel.",
+  "settings.showFab.label": "Mostrar botón flotante (FAB)",
+  "settings.showEnhancerFab.label": "Mostrar botón flotante del Mejorador de Mensajes",
+  "settings.defaultOoc.label": "Instrucción OOC predeterminada",
+  "settings.length.label": "Longitud objetivo",
+  "settings.length.short": "Corto",
+  "settings.length.medium": "Medio",
+  "settings.length.long": "Largo",
+  "settings.presetId.label": "ID de preset personalizado (opcional, dejar en blanco para usar el preset del chat actual)",
+  "settings.iphoneMode": "Modo iPhone",
+  "settings.iphoneModeInfo": "El panel no se puede cerrar."
+}

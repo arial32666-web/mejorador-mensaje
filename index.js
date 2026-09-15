@@ -2,10 +2,16 @@
  * Message Enhancer — arranque de la extensión para SillyTavern
  * =================================================================
  * Igual de "plomería" que el index.js de Crossroads:
- *   1. Carga tavo-shim.js (define window.tavo).
- *   2. Inyecta ui/panel-me.html tal cual, sin editar una línea.
- *   3. Carga entry.js tal cual.
- *   4. Agrega un pequeño panel de ajustes dentro del cajón de Extensions de
+ *   1. Carga tavo-shim.js, que expone `window.__imeBuildTavo()` — una fábrica
+ *      que arma un objeto `tavo` nuevo cada vez que se llama (no toca
+ *      `window.tavo`, así que no puede chocar con Crossroads u otra
+ *      extensión CCC portada de la misma forma).
+ *   2. Llama a esa fábrica UNA vez para obtener la copia de `tavo` de esta
+ *      extensión.
+ *   3. Inyecta ui/panel-me.html tal cual, sin editar una línea, y ejecuta su
+ *      <script> pasándole esa copia de `tavo` como variable local.
+ *   4. Ejecuta entry.js de la misma forma.
+ *   5. Agrega un pequeño panel de ajustes dentro del cajón de Extensions de
  *      SillyTavern, porque Tavo genera esa pantalla solo a partir del
  *      manifest.json y SillyTavern no lo hace automáticamente para
  *      extensiones de terceros. Las etiquetas se toman de locales/es.json.
@@ -15,20 +21,23 @@ import "./tavo-shim.js";
 
 const BASE_URL = new URL(".", import.meta.url).href;
 
-function loadScriptTag(src) {
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = src;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error("No se pudo cargar " + src));
-    document.body.appendChild(s);
-  });
+function runWithLocalTavo(code, tavo, label) {
+  try {
+    const fn = new Function("tavo", code);
+    fn(tavo);
+  } catch (err) {
+    console.error("[Message Enhancer] error ejecutando " + label + ":", err);
+  }
 }
 
-async function mountPanelFragment() {
-  const res = await fetch(BASE_URL + "ui/panel-me.html");
-  if (!res.ok) throw new Error("No se pudo leer ui/panel-me.html (" + res.status + ")");
-  const html = await res.text();
+async function fetchText(path) {
+  const res = await fetch(BASE_URL + path);
+  if (!res.ok) throw new Error("No se pudo leer " + path + " (" + res.status + ")");
+  return res.text();
+}
+
+async function mountPanelFragment(tavo) {
+  const html = await fetchText("ui/panel-me.html");
 
   const tmp = document.createElement("div");
   tmp.innerHTML = html;
@@ -40,10 +49,8 @@ async function mountPanelFragment() {
     document.body.appendChild(tmp.firstChild);
   }
 
-  inlineScripts.forEach((oldScript) => {
-    const s = document.createElement("script");
-    s.textContent = oldScript.textContent;
-    document.body.appendChild(s);
+  inlineScripts.forEach((node) => {
+    runWithLocalTavo(node.textContent, tavo, "ui/panel-me.html");
   });
 }
 
@@ -125,9 +132,6 @@ async function mountSettingsPanel() {
     el.addEventListener("change", save);
   });
 
-  // El toggle de inline-drawer de SillyTavern se activa solo si la clase CSS
-  // ya está cargada por el core; si tu tema no la reconoce, el contenido
-  // igual queda visible (solo no colapsa/expande con animación).
   const header = box.querySelector(".inline-drawer-toggle");
   const content = box.querySelector(".inline-drawer-content");
   header.addEventListener("click", () => {
@@ -139,22 +143,32 @@ async function mountSettingsPanel() {
 }
 
 async function boot() {
+  if (typeof window.__imeBuildTavo !== "function") {
+    console.error("[Message Enhancer] tavo-shim.js no cargó correctamente.");
+    return;
+  }
+  const tavo = window.__imeBuildTavo();
+
   try {
-    await mountPanelFragment();
+    await mountPanelFragment(tavo);
   } catch (err) {
     console.error("[Message Enhancer] no se pudo montar ui/panel-me.html:", err);
     return;
   }
+
   try {
-    await loadScriptTag(BASE_URL + "entry.js");
+    const entryCode = await fetchText("entry.js");
+    runWithLocalTavo(entryCode, tavo, "entry.js");
   } catch (err) {
     console.error("[Message Enhancer] no se pudo cargar entry.js:", err);
   }
+
   try {
     await mountSettingsPanel();
   } catch (err) {
     console.error("[Message Enhancer] no se pudo montar el panel de ajustes:", err);
   }
+
   console.log("[Message Enhancer] extensión cargada.");
 }
 
