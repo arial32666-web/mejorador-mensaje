@@ -1,281 +1,165 @@
-// Mejorador de Mensaje — extensión para SillyTavern / TauriTavern
-// Rediseñado al estilo "Enhancer" (paleta de colores, pestaña User,
-// Scene Description, OOC Prompt - Scene, OOC Prompt - Main).
-// Solo implementa la pestaña "User" — "Char" se deja fuera a propósito.
+/*
+ * Message Enhancer — arranque de la extensión para SillyTavern
+ * =================================================================
+ * Igual de "plomería" que el index.js de Crossroads:
+ *   1. Carga tavo-shim.js (define window.tavo).
+ *   2. Inyecta ui/panel-me.html tal cual, sin editar una línea.
+ *   3. Carga entry.js tal cual.
+ *   4. Agrega un pequeño panel de ajustes dentro del cajón de Extensions de
+ *      SillyTavern, porque Tavo genera esa pantalla solo a partir del
+ *      manifest.json y SillyTavern no lo hace automáticamente para
+ *      extensiones de terceros. Las etiquetas se toman de locales/es.json.
+ */
 
-(function () {
-  const MODULE_NAME = 'mejorador_mensaje';
+import "./tavo-shim.js";
 
-  const ACCENTS = ['#e05d5d', '#e08a3d', '#c9a227', '#4caf6d', '#3bb3a6', '#4d8ce0'];
+const BASE_URL = new URL(".", import.meta.url).href;
 
-  const INTENSITY_TEXT = {
-    light: 'Aplica solo un pulido ligero: corrige fluidez, ortografía y ritmo. Cambia lo mínimo posible la redacción original.',
-    moderate: 'Expande con más detalle narrativo y sensorial, sin cambiar la intención ni añadir diálogo nuevo.',
-    strong: 'Reescribe la prosa de forma notoria: varía la estructura de las oraciones, separa diálogo y narración con más claridad, y añade matices sensoriales y emocionales — incluso si el texto original ya está bien elaborado, transforma el estilo de forma clara mientras mantienes los mismos eventos, diálogos e intención.',
-  };
-
-  const DEFAULT_SETTINGS = {
-    mainInstruction:
-      'Mantén las acciones entre asteriscos. Responde solo con el texto reescrito, sin explicaciones ni comillas.',
-    intensity: 'moderate',
-    accent: ACCENTS[0],
-    useContext: true,
-    fabPos: null,
-  };
-
-  function getCtx() { return SillyTavern.getContext(); }
-
-  function loadSettings() {
-    const ctx = getCtx();
-    if (!ctx.extensionSettings[MODULE_NAME]) {
-      ctx.extensionSettings[MODULE_NAME] = { ...DEFAULT_SETTINGS };
-    }
-    const s = ctx.extensionSettings[MODULE_NAME];
-    for (const key in DEFAULT_SETTINGS) {
-      if (s[key] === undefined) s[key] = DEFAULT_SETTINGS[key];
-    }
-    return s;
-  }
-
-  function saveSettings() { getCtx().saveSettingsDebounced(); }
-
-  function buildPrompt(scene, sceneOoc, mainOoc, intensity) {
-    const extra = sceneOoc && sceneOoc.trim() ? ` ${sceneOoc.trim()}` : '';
-    const main = mainOoc && mainOoc.trim() ? mainOoc.trim() : '';
-    const intensityLine = INTENSITY_TEXT[intensity] || INTENSITY_TEXT.moderate;
-    return (
-      `Mensaje a mejorar:\n${scene.trim()}\n\n` +
-      `[OOC: ${intensityLine} ${main} ${extra} No agregues comentarios fuera de personaje, responde solo con el texto final.]`
-    );
-  }
-
-  function accentDotsHtml(current) {
-    return ACCENTS.map((c) => `<span class="mje-dot${c === current ? ' is-on' : ''}" data-color="${c}" style="background:${c}"></span>`).join('');
-  }
-
-  function injectHtml() {
-    const settings = loadSettings();
-    const html = `
-      <div id="mje-fab" title="Arrastra para mover">✨</div>
-
-      <div id="mje-overlay" class="mje-hidden">
-        <div id="mje-panel">
-          <div class="mje-header">
-            <span class="mje-title">Enhancer</span>
-            <div class="mje-dots">${accentDotsHtml(settings.accent)}</div>
-            <span id="mje-close" title="Cerrar">✕</span>
-          </div>
-
-          <div class="mje-section">
-            <div class="mje-section-label">🎬 SCENE DESCRIPTION</div>
-            <textarea id="mje-scene" rows="4" placeholder="Describe qué pasa, en pocas palabras... ej: 'hola *sacude la mano con felicidad sonriendo*'"></textarea>
-          </div>
-
-          <div class="mje-section">
-            <div class="mje-section-label">🎚 INTENSIDAD</div>
-            <div class="mje-intensity">
-              <span class="mje-int-btn" data-val="light">Ligero</span>
-              <span class="mje-int-btn" data-val="moderate">Moderado</span>
-              <span class="mje-int-btn" data-val="strong">Fuerte</span>
-            </div>
-          </div>
-
-          <div class="mje-section">
-            <div class="mje-section-label">
-              ⚙ OOC PROMPT - SCENE <span class="mje-badge">optional</span>
-            </div>
-            <div class="mje-hint">Temporal — se borra después de mejorar. Úsalo para instrucciones puntuales de esta escena.</div>
-            <textarea id="mje-ooc-scene" rows="2" placeholder="Ej: 'enfócate en su reacción, mantenlo interno, sin diálogo.'"></textarea>
-          </div>
-
-          <div class="mje-section">
-            <div class="mje-section-label">
-              🔖 OOC PROMPT - MAIN <span class="mje-badge">optional</span>
-            </div>
-            <div class="mje-hint">Se guarda de forma permanente — aplica a cada mejora.</div>
-            <textarea id="mje-ooc-main" rows="3"></textarea>
-          </div>
-
-          <button id="mje-run" class="mje-primary">✨ <span id="mje-run-label">Enhance</span></button>
-
-          <div id="mje-error" class="mje-error mje-hidden"></div>
-
-          <div id="mje-result-wrap" class="mje-hidden">
-            <div class="mje-section-label">RESULTADO (editable)</div>
-            <textarea id="mje-result" rows="7"></textarea>
-            <div class="mje-actions">
-              <button id="mje-retry">Reintentar</button>
-              <button id="mje-use" class="mje-primary">Usar este</button>
-            </div>
-          </div>
-        </div>
-      </div>`;
-    $('body').append(html);
-    $('#mje-ooc-main').val(settings.mainInstruction);
-  }
-
-  function applyAccent(color) {
-    document.documentElement.style.setProperty('--mje-accent', color);
-  }
-
-  function wireUp() {
-    let busy = false;
-
-    const $fab = $('#mje-fab');
-    const $overlay = $('#mje-overlay');
-    const $scene = $('#mje-scene');
-    const $oocScene = $('#mje-ooc-scene');
-    const $oocMain = $('#mje-ooc-main');
-    const $run = $('#mje-run');
-    const $runLabel = $('#mje-run-label');
-    const $error = $('#mje-error');
-    const $resultWrap = $('#mje-result-wrap');
-    const $result = $('#mje-result');
-
-    applyAccent(loadSettings().accent);
-
-    function openPanel() { $overlay.removeClass('mje-hidden'); }
-    function closePanel() { $overlay.addClass('mje-hidden'); }
-    $('#mje-close').on('click', closePanel);
-
-    $('.mje-dots').on('click', '.mje-dot', function () {
-      const color = $(this).data('color');
-      const settings = loadSettings();
-      settings.accent = color;
-      saveSettings();
-      applyAccent(color);
-      $('.mje-dot').removeClass('is-on');
-      $(this).addClass('is-on');
-    });
-
-    $oocMain.on('input', function () {
-      const settings = loadSettings();
-      settings.mainInstruction = $(this).val();
-      saveSettings();
-    });
-
-    function markIntensityBtn(val) {
-      $('.mje-int-btn').removeClass('is-on');
-      $(`.mje-int-btn[data-val="${val}"]`).addClass('is-on');
-    }
-    markIntensityBtn(loadSettings().intensity);
-
-    $('.mje-intensity').on('click', '.mje-int-btn', function () {
-      const val = $(this).data('val');
-      const settings = loadSettings();
-      settings.intensity = val;
-      saveSettings();
-      markIntensityBtn(val);
-    });
-
-    function showError(msg) { $error.text(msg).removeClass('mje-hidden'); }
-    function clearError() { $error.text('').addClass('mje-hidden'); }
-    function setBusy(state, label) {
-      busy = state;
-      $run.prop('disabled', state);
-      $runLabel.text(label || 'Enhance');
-    }
-
-    async function runGenerate(label) {
-      const scene = $scene.val().trim();
-      if (!scene) { showError('Escribe primero la descripción de la escena.'); return; }
-      clearError();
-      setBusy(true, label);
-      try {
-        const settings = loadSettings();
-        const ctx = getCtx();
-        const prompt = buildPrompt(scene, $oocScene.val(), settings.mainInstruction, settings.intensity);
-        const text = await ctx.generateQuietPrompt({ quietPrompt: prompt });
-        $result.val((text || '').trim());
-        $resultWrap.removeClass('mje-hidden');
-        $oocScene.val(''); // OOC - Scene es temporal: se borra tras mejorar
-        setBusy(false, 'Reintentar mejora');
-      } catch (e) {
-        setBusy(false, 'Enhance');
-        showError('Falló la generación: ' + (e && e.message ? e.message : String(e)));
-      }
-    }
-
-    $run.on('click', () => runGenerate('Mejorando...'));
-    $('#mje-retry').on('click', () => runGenerate('Mejorando...'));
-
-    $('#mje-use').on('click', () => {
-      const text = $result.val().trim();
-      if (!text) return;
-      $('#send_textarea').val(text).trigger('input');
-      $scene.val('');
-      $resultWrap.addClass('mje-hidden');
-      $runLabel.text('Enhance');
-      clearError();
-      closePanel();
-    });
-
-    // ---------- burbuja arrastrable ----------
-    let dragging = false;
-    let moved = false;
-    let startX, startY, startRight, startBottom;
-
-    function applyFabPos(settings) {
-      if (settings.fabPos) {
-        $fab.css({ right: settings.fabPos.right + 'px', bottom: settings.fabPos.bottom + 'px' });
-      } else {
-        $fab.css({ right: '', bottom: '' });
-      }
-    }
-    applyFabPos(loadSettings());
-
-    function onPointerDown(e) {
-      dragging = true;
-      moved = false;
-      const p = e.touches ? e.touches[0] : e;
-      startX = p.clientX;
-      startY = p.clientY;
-      const rect = $fab[0].getBoundingClientRect();
-      startRight = window.innerWidth - rect.right;
-      startBottom = window.innerHeight - rect.bottom;
-      e.preventDefault();
-    }
-    function onPointerMove(e) {
-      if (!dragging) return;
-      const p = e.touches ? e.touches[0] : e;
-      const dx = p.clientX - startX;
-      const dy = p.clientY - startY;
-      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
-      let right = startRight - dx;
-      let bottom = startBottom - dy;
-      right = Math.max(4, Math.min(window.innerWidth - 52, right));
-      bottom = Math.max(4, Math.min(window.innerHeight - 52, bottom));
-      $fab.css({ right: right + 'px', bottom: bottom + 'px' });
-    }
-    function onPointerUp() {
-      if (!dragging) return;
-      dragging = false;
-      if (moved) {
-        const settings = loadSettings();
-        const rect = $fab[0].getBoundingClientRect();
-        settings.fabPos = {
-          right: Math.round(window.innerWidth - rect.right),
-          bottom: Math.round(window.innerHeight - rect.bottom),
-        };
-        saveSettings();
-      } else {
-        openPanel();
-      }
-    }
-
-    $fab.on('mousedown touchstart', onPointerDown);
-    $(document).on('mousemove touchmove', onPointerMove);
-    $(document).on('mouseup touchend', onPointerUp);
-  }
-
-  $(document).ready(function () {
-    const check = setInterval(() => {
-      if ($('#send_textarea').length) {
-        clearInterval(check);
-        loadSettings();
-        injectHtml();
-        wireUp();
-      }
-    }, 500);
+function loadScriptTag(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("No se pudo cargar " + src));
+    document.body.appendChild(s);
   });
-})();
+}
+
+async function mountPanelFragment() {
+  const res = await fetch(BASE_URL + "ui/panel-me.html");
+  if (!res.ok) throw new Error("No se pudo leer ui/panel-me.html (" + res.status + ")");
+  const html = await res.text();
+
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+
+  const inlineScripts = Array.from(tmp.querySelectorAll("script"));
+  inlineScripts.forEach((node) => node.remove());
+
+  while (tmp.firstChild) {
+    document.body.appendChild(tmp.firstChild);
+  }
+
+  inlineScripts.forEach((oldScript) => {
+    const s = document.createElement("script");
+    s.textContent = oldScript.textContent;
+    document.body.appendChild(s);
+  });
+}
+
+// ---------------------------------------------------------------------
+// Panel de ajustes (equivalente al "contributes.settings.schema" de Tavo)
+// ---------------------------------------------------------------------
+
+async function loadLabels() {
+  try {
+    const res = await fetch(BASE_URL + "locales/es.json");
+    if (res.ok) return await res.json();
+  } catch (_) {}
+  return {};
+}
+
+function t(labels, key, fallback) {
+  return (labels && labels[key]) || fallback || key;
+}
+
+async function mountSettingsPanel() {
+  const host = document.getElementById("extensions_settings2") || document.getElementById("extensions_settings");
+  if (!host) {
+    console.warn("[Message Enhancer] no se encontró el cajón de ajustes de Extensions; se omite el panel de ajustes (el plugin sigue funcionando con los valores por defecto).");
+    return;
+  }
+  const labels = await loadLabels();
+  const bridge = window.__imeSettingsBridge;
+  if (!bridge) return;
+  const current = bridge.read();
+
+  const box = document.createElement("div");
+  box.className = "ime-settings inline-drawer";
+  box.innerHTML = `
+    <div class="inline-drawer-toggle inline-drawer-header">
+      <b>${t(labels, "plugin.name", "Mejorar Mensaje")}</b>
+      <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+    </div>
+    <div class="inline-drawer-content" style="display:flex; flex-direction:column; gap:8px; padding:8px 2px;">
+      <small>${t(labels, "settings.info", "Configura el comportamiento predeterminado de Mejorar Mensaje.")}</small>
+      <label class="checkbox_label"><input type="checkbox" id="ime_iphoneMode"> ${t(labels, "settings.iphoneMode", "Modo iPhone")}</label>
+      <label class="checkbox_label"><input type="checkbox" id="ime_showFab"> ${t(labels, "settings.showFab.label", "Mostrar botón flotante (FAB)")}</label>
+      <label class="checkbox_label"><input type="checkbox" id="ime_showEnhancerFab"> ${t(labels, "settings.showEnhancerFab.label", "Mostrar botón flotante del Mejorador de Mensajes")}</label>
+      <label>${t(labels, "settings.defaultOoc.label", "Instrucción OOC predeterminada")}
+        <textarea id="ime_defaultOoc" rows="3" style="width:100%"></textarea>
+      </label>
+      <label>${t(labels, "settings.length.label", "Longitud objetivo")}
+        <select id="ime_length">
+          <option value="short">${t(labels, "settings.length.short", "Corto")}</option>
+          <option value="medium">${t(labels, "settings.length.medium", "Medio")}</option>
+          <option value="long">${t(labels, "settings.length.long", "Largo")}</option>
+        </select>
+      </label>
+      <label>${t(labels, "settings.presetId.label", "ID de preset personalizado (opcional)")}
+        <input type="text" id="ime_presetId" style="width:100%">
+      </label>
+    </div>
+  `;
+  host.appendChild(box);
+
+  const $ = (id) => box.querySelector(id);
+  $("#ime_iphoneMode").checked = !!current.iphoneMode;
+  $("#ime_showFab").checked = !!current.showFab;
+  $("#ime_showEnhancerFab").checked = !!current.showEnhancerFab;
+  $("#ime_defaultOoc").value = current.defaultOoc || "";
+  $("#ime_length").value = current.length || "medium";
+  $("#ime_presetId").value = current.presetId || "";
+
+  function save() {
+    bridge.write({
+      iphoneMode: $("#ime_iphoneMode").checked,
+      showFab: $("#ime_showFab").checked,
+      showEnhancerFab: $("#ime_showEnhancerFab").checked,
+      defaultOoc: $("#ime_defaultOoc").value,
+      length: $("#ime_length").value,
+      presetId: $("#ime_presetId").value.trim()
+    });
+  }
+  box.querySelectorAll("input, textarea, select").forEach((el) => {
+    el.addEventListener("change", save);
+  });
+
+  // El toggle de inline-drawer de SillyTavern se activa solo si la clase CSS
+  // ya está cargada por el core; si tu tema no la reconoce, el contenido
+  // igual queda visible (solo no colapsa/expande con animación).
+  const header = box.querySelector(".inline-drawer-toggle");
+  const content = box.querySelector(".inline-drawer-content");
+  header.addEventListener("click", () => {
+    const icon = box.querySelector(".inline-drawer-icon");
+    const hidden = content.style.display === "none";
+    content.style.display = hidden ? "flex" : "none";
+    if (icon) icon.classList.toggle("down", hidden);
+  });
+}
+
+async function boot() {
+  try {
+    await mountPanelFragment();
+  } catch (err) {
+    console.error("[Message Enhancer] no se pudo montar ui/panel-me.html:", err);
+    return;
+  }
+  try {
+    await loadScriptTag(BASE_URL + "entry.js");
+  } catch (err) {
+    console.error("[Message Enhancer] no se pudo cargar entry.js:", err);
+  }
+  try {
+    await mountSettingsPanel();
+  } catch (err) {
+    console.error("[Message Enhancer] no se pudo montar el panel de ajustes:", err);
+  }
+  console.log("[Message Enhancer] extensión cargada.");
+}
+
+if (document.body) {
+  boot();
+} else {
+  document.addEventListener("DOMContentLoaded", boot, { once: true });
+}
