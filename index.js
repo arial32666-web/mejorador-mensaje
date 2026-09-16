@@ -164,7 +164,24 @@ async function mountSettingsPanel() {
   });
 }
 
+// El panel usa la fuente de íconos "Material Symbols Outlined" (los botones
+// se ven como texto: "person", "auto_awesome", etc. si no está cargada). En
+// Tavo esta fuente la trae la app por fuera del plugin; aquí hay que pedirla
+// explícitamente. Requiere que el dispositivo tenga acceso a Google Fonts —
+// si tu red bloquea fonts.googleapis.com, los íconos seguirán viéndose como
+// texto aunque todo lo demás funcione bien.
+function ensureMaterialSymbolsFont() {
+  const id = "crossroads-ccc-material-symbols-font";
+  if (document.getElementById(id)) return;
+  const link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200";
+  document.head.appendChild(link);
+}
+
 async function boot() {
+  ensureMaterialSymbolsFont();
   if (typeof window.__imeBuildTavo !== "function") {
     showVisibleError("arranque", new Error("tavo-shim.js no cargó correctamente."));
     return;
